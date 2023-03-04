@@ -1,0 +1,16 @@
+{
+    "version": {
+        "major": 1,
+        "minor": 0,
+        "patch": 0,
+        "snapshot": false
+    },
+    "projectName": "QtAppBase",
+    "projectDescription": "Provides the foundation of every Qt based App",
+    "vendor": "Björn Stresing",
+    "contact": "bjoern.stresing@gmx.de",
+    "domain": "com.github.Tereius",
+    "copyrightYear": "2023",
+    "license": "GPLv3",
+    "repository": "https://github.com/Tereius/QtAppBase.git"
+}
