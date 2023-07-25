@@ -2,7 +2,7 @@
 
 This Repo provides the basics for every Qt6 based App:
 
-* A QMlApplicationEngine with hot reloading support
+* A QmlApplicationEngine with hot reloading support
 * A LogMessageHandler with log rotation
 * Deployment helper for Android, RaspberryPi
 
