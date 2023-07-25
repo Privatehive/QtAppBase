@@ -8,8 +8,8 @@ This Repo provides the basics for every Qt6 based App:
 
 ### How to compile AppImage runtime for Armv6
 
-The [AppImageKit](https://github.com/AppImage/AppImageKit) only releases the AppImage binaries for x86_64, i686, aarch64, armhf (armv7).
-Binaries for armv6 are missing (necessary for some Raspberry PIs).
+The [AppImageKit](https://github.com/AppImage/AppImageKit) release only contains the AppImage binaries for x86_64, i686, aarch64, armhf (
+armv7). Binaries for armv6 are missing (necessary for some Raspberry PIs).
 
 To compile the Armv6 binaries do the following:
 
