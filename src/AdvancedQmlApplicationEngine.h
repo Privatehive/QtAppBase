@@ -1,4 +1,5 @@
 #pragma once
+#include "QtApplicationBaseExport.h"
 #include <QDir>
 #include <QFileSystemWatcher>
 #include <QList>
@@ -9,21 +10,28 @@
 
 class QFileSystemWatcher;
 class QTimer;
+class QQuickView;
 
 
-class AdvancedQmlApplicationEngine : public QQmlApplicationEngine {
+class QTAPPBASE_EXPORT AdvancedQmlApplicationEngine : public QQmlApplicationEngine {
 
 	Q_OBJECT
 
  public:
 	explicit AdvancedQmlApplicationEngine(QObject *parent = nullptr);
 	void setHotReload(bool enable);
-	void loadRootItem(const QString &rootItem);
-	void loadRootItem(const QUrl &rootItem);
+	void loadRootItem(const QString &rootItem, bool useQuickView = true);
+	void loadRootItem(const QUrl &rootItem, bool useQuickView);
 	bool hasRootItem() const;
 
- private slots:
+ public slots:
 	void reload();
+
+ private slots:
+	void handleReload();
+
+ signals:
+	void reloadFinished();
 
  private:
 	Q_DISABLE_COPY(AdvancedQmlApplicationEngine)
@@ -32,9 +40,11 @@ class AdvancedQmlApplicationEngine : public QQmlApplicationEngine {
 	void connectWatcher();
 	void disconnectWatcher();
 	QList<QString> findQmlFilesRecursive(const QDir &dir) const;
+	QObject *getRootObject() const;
 
 	QUrl mRootUrl;
 	bool mHotReloading;
 	QFileSystemWatcher *mpWatcher;
 	QTimer *mpTimer;
+	QQuickView *mpView;
 };

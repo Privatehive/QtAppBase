@@ -14,13 +14,11 @@
 
 
 #define MAX_CAT_LENGTH 14
-Q_LOGGING_CATEGORY(libav, "libav")
-Q_LOGGING_CATEGORY(mdklog, "mdk")
 
 namespace {
-static QFile log_file;
-static QString log_dir;
-static QMutex mutex;
+QFile log_file;
+QString log_dir;
+QMutex mutex;
 } // namespace
 
 QTextStream &qStdOut() {
@@ -46,6 +44,7 @@ void LogMessageHandler::prepare(const QString &dataPath) {
 	auto date = QDateTime::currentDateTime();
 	auto deleteDate = date.addDays(-7);
 	QDir logDir(dataPath);
+	logDir.mkpath(dataPath);
 	log_dir = dataPath;
 	auto strRexExp = QString("_(?<date>[\\d\\-_]+)\\.log").prepend(QRegularExpression::escape(QCoreApplication::applicationName()));
 	auto logDateRegExp = QRegularExpression(strRexExp);

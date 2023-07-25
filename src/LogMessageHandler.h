@@ -1,4 +1,5 @@
 #pragma once
+#include "QtApplicationBaseExport.h"
 #include <QDateTime>
 #include <QDir>
 #include <QLoggingCategory>
@@ -8,7 +9,7 @@
  * \brief Writes qDebug, qInof, ... log messages to file and std::out
  *
  */
-class LogMessageHandler {
+class QTAPPBASE_EXPORT LogMessageHandler {
 
  public:
 	static void prepare(const QString &dataPath);

@@ -4,7 +4,10 @@
 #include <QFileSystemWatcher>
 #include <QIcon>
 #include <QMetaObject>
+#include <QQmlComponent>
 #include <QQmlContext>
+#include <QQuickView>
+#include <QQuickWindow>
 #include <QStandardPaths>
 #include <QString>
 #include <QThread>
@@ -12,12 +15,12 @@
 
 
 AdvancedQmlApplicationEngine::AdvancedQmlApplicationEngine(QObject *parent) :
- QQmlApplicationEngine(parent), mHotReloading(false), mpWatcher(new QFileSystemWatcher(this)), mpTimer(new QTimer(this)) {
+ QQmlApplicationEngine(parent), mHotReloading(false), mpWatcher(new QFileSystemWatcher(this)), mpTimer(new QTimer(this)), mpView(nullptr) {
 
 	mpTimer->setTimerType(Qt::VeryCoarseTimer);
 	mpTimer->setInterval(500);
 	mpTimer->setSingleShot(true);
-	connect(mpTimer, &QTimer::timeout, this, [this]() { reload(); });
+	connect(mpTimer, &QTimer::timeout, this, [this]() { handleReload(); });
 	init();
 }
 
@@ -27,15 +30,8 @@ void AdvancedQmlApplicationEngine::init() {
 	// setImportPathList({QLatin1String("/home/bjoern/.conan/data/qt/6.4.2/_/_/package/98e9915d107b9d8446edaf435ac655e84843eb36/res/archdatadir/qml")}/*QStringList(QLatin1String("qrc:/"))+engine.importPathList()+QString::fromLocal8Bit(QML_IMPORT_PATHS).split(QLatin1String(","))*/);
 	// setPluginPathList({QLatin1String("qrc:/"), QLatin1String("qrc:/qt-project.org/imports"),
 	// QLatin1String("/home/bjoern/.conan/data/qt/6.4.2/_/_/package/98e9915d107b9d8446edaf435ac655e84843eb36/res/archdatadir/plugins")}/*QStringList(QLatin1String("qrc:/"))+engine.pluginPathList()+QString::fromLocal8Bit(QML_PLUGIN_PATHS).split(QLatin1String(","))*/);
-	qInfo() << "--- starting AdvancedQmlApplicationEngine ---";
-	qInfo() << "qml import paths:" << importPathList();
-	qInfo() << "qml plugin paths:" << pluginPathList();
-	if(qEnvironmentVariableIsSet("QML_DISK_CACHE_PATH")) {
-		qInfo() << "qml cache location (overwritten)" << qgetenv("QML_DISK_CACHE_PATH");
-	} else {
-		qInfo() << "qml cache location (default)" << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
-	}
-	qInfo() << "icon search path" << QIcon::themeSearchPaths();
+	qInfo() << "Starting AdvancedQmlApplicationEngine";
+	QQuickWindow::setTextRenderType(QQuickWindow::QtTextRendering); // Use Qt rendering for constant quality beyond all platforms
 }
 
 void AdvancedQmlApplicationEngine::setHotReload(bool enable) {
@@ -46,36 +42,66 @@ void AdvancedQmlApplicationEngine::setHotReload(bool enable) {
 	}
 }
 
-void AdvancedQmlApplicationEngine::loadRootItem(const QString &rootItem) {
+// If "useQuickView==false" you have to use ApplicationWindow as you root qml object.
+void AdvancedQmlApplicationEngine::loadRootItem(const QString &rootItem, bool useQuickView /*= true*/) {
+
+	qInfo() << "loading qml root item";
+	qInfo() << "qml import paths:" << importPathList();
+	qInfo() << "qml plugin paths:" << pluginPathList();
+	if(qEnvironmentVariableIsSet("QML_DISK_CACHE_PATH")) {
+		qInfo() << "qml cache location (overwritten)" << qgetenv("QML_DISK_CACHE_PATH");
+	} else {
+		qInfo() << "qml cache location (default)" << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+	}
+	qInfo() << "icon search path" << QIcon::themeSearchPaths();
 
 	if(rootItem.startsWith("qrc:"))
-		loadRootItem(QUrl(rootItem));
+		loadRootItem(QUrl(rootItem), useQuickView);
 	else
-		loadRootItem(QUrl::fromLocalFile(rootItem));
+		loadRootItem(QUrl::fromLocalFile(rootItem), useQuickView);
 }
 
-void AdvancedQmlApplicationEngine::loadRootItem(const QUrl &rootItem) {
+void AdvancedQmlApplicationEngine::loadRootItem(const QUrl &rootItem, bool useQuickView) {
 
 	mRootUrl = rootItem;
-	load(rootItem);
-	if(rootObjects().isEmpty()) {
-		const auto errorMsg = QString("Couldn't create GUI: %1").arg(rootItem.toDisplayString());
-		qFatal(qPrintable(errorMsg));
+
+	if(useQuickView) {
+		// QWindow window;
+		mpView = new QQuickView(this, nullptr);
+		mpView->setResizeMode(QQuickView::SizeRootObjectToView);
+		mpView->setSource(rootItem);
+		if(!mpView->rootObject()) {
+			QString errorMsg;
+			for(const auto &error : mpView->errors()) {
+				errorMsg += QString("Couldn't create GUI: %1").arg(error.toString());
+			}
+			qFatal() << errorMsg;
+		} else {
+			for(const auto &error : mpView->errors()) {
+				qFatal() << error;
+			}
+			mpView->show();
+		}
+	} else {
+		load(rootItem);
+		if(rootObjects().isEmpty()) {
+			const auto errorMsg = QString("Couldn't create GUI: %1").arg(rootItem.toDisplayString());
+			qFatal() << errorMsg;
+		}
 	}
 	if(mHotReloading) connectWatcher();
 }
 
 bool AdvancedQmlApplicationEngine::hasRootItem() const {
 
-	return !rootObjects().isEmpty();
+	return getRootObject();
 }
 
 void AdvancedQmlApplicationEngine::connectWatcher() {
 
 	disconnectWatcher();
-	auto objects = rootObjects();
-	if(!objects.isEmpty() && objects.first()) {
-		auto ctx = contextForObject(objects.first());
+	if(const auto rootObject = getRootObject()) {
+		auto ctx = contextForObject(rootObject);
 		if(ctx && ctx->baseUrl().isLocalFile()) {
 			QFileInfo fi(ctx->baseUrl().toLocalFile());
 			QDir dir(fi.absoluteDir());
@@ -122,12 +148,36 @@ QList<QString> AdvancedQmlApplicationEngine::findQmlFilesRecursive(const QDir &d
 
 void AdvancedQmlApplicationEngine::reload() {
 
-	for(auto rootObject : rootObjects()) {
-		if(rootObject) {
-			QMetaObject::invokeMethod(rootObject, "close", Qt::DirectConnection);
+	if(mpTimer) mpTimer->start();
+}
+
+void AdvancedQmlApplicationEngine::handleReload() {
+
+	if(mpView) {
+		mpView->setSource({});
+	} else {
+		for(auto rootObject : rootObjects()) {
+			if(rootObject) {
+				QMetaObject::invokeMethod(rootObject, "close", Qt::DirectConnection);
+			}
 		}
 	}
 	clearComponentCache();
 	QThread::msleep(50);
-	load(mRootUrl);
+	if(mpView) {
+		mpView->setSource(mRootUrl);
+		mpView->requestActivate();
+	} else {
+		load(mRootUrl);
+	}
+	emit reloadFinished();
+}
+
+QObject *AdvancedQmlApplicationEngine::getRootObject() const {
+
+	if(mpView) {
+		return reinterpret_cast<QObject *>(mpView->rootObject());
+	} else {
+		return rootObjects().isEmpty() ? nullptr : rootObjects().first();
+	}
 }
