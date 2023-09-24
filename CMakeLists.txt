@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21.1)
-project(dummy)
+project(QtAppBase)
 
 # Set a default search path for CMake modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" "${CMAKE_MODULE_PATH}")
@@ -19,5 +19,7 @@ install(
 				"${CMAKE_SOURCE_DIR}/CMake/MaterialIcons.cmake"
 				"${CMAKE_SOURCE_DIR}/CMake/AppImage.cmake"
 				"${CMAKE_SOURCE_DIR}/CMake/QtAppBase.desktop.in"
-				DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake"
+				"${CMAKE_SOURCE_DIR}/CMake/AndroidManifest.xml.in"
+				DESTINATION
+				"${CMAKE_INSTALL_LIBDIR}/cmake"
 )

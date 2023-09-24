@@ -4,7 +4,15 @@ This Repo provides the basics for every Qt6 based App:
 
 * A QmlApplicationEngine with hot reloading support
 * A LogMessageHandler with log rotation
-* Deployment helper for Android, RaspberryPi
+* Deployment helper for Android, RaspberryPi, Linux
+
+### How to run on Raspberry Pi (EGLFS)
+
+Flash the Raspberry Pi OS Lite image
+
+* Enable the GL (Full KMS) driver in raspi-config (also make sure at least 64 MB GPU memory is selected)
+* Install: libegl1, libgles2, libxkbcommon0, libinput10
+* Run the AppImage
 
 ### How to compile AppImage runtime for Armv6
 

@@ -74,6 +74,7 @@ function(install_appimage TARGET)
 					file(MAKE_DIRECTORY
 					\"${CMAKE_INSTALL_PREFIX}/AppDir/usr/bin\"
 					\"${CMAKE_INSTALL_PREFIX}/AppDir/usr/lib\"
+					\"${CMAKE_INSTALL_PREFIX}/AppDir/usr/lib/fonts\"
 					\"${CMAKE_INSTALL_PREFIX}/AppDir/usr/share/applications\"
 					\"${CMAKE_INSTALL_PREFIX}/AppDir/usr/share/icons\")
 
@@ -82,7 +83,13 @@ function(install_appimage TARGET)
 					set(AppIcon \"\$<TARGET_FILE_BASE_NAME:${TARGET}>\")
 					configure_file(\"${current_dir}/QtAppBase.desktop.in\" \"${CMAKE_INSTALL_PREFIX}/AppDir/usr/share/applications/\$<TARGET_FILE_BASE_NAME:${TARGET}>.desktop\" @ONLY)
 
+					# Default AppImage icon
 					file(DOWNLOAD \"https://upload.wikimedia.org/wikipedia/commons/0/00/Cross-image.svg\" \"${CMAKE_INSTALL_PREFIX}/AppDir/\${AppIcon}.svg\")
+
+					# DejaVu font
+					file(DOWNLOAD \"http://sourceforge.net/projects/dejavu/files/dejavu/2.37/dejavu-sans-ttf-2.37.zip\" \"${PROJECT_BINARY_DIR}/dejavu-sans-ttf-2.37.zip\")
+					execute_process(COMMAND ${CMAKE_COMMAND} -E tar xf \"${PROJECT_BINARY_DIR}/dejavu-sans-ttf-2.37.zip\" WORKING_DIRECTORY \"${PROJECT_BINARY_DIR}\")
+					execute_process(COMMAND ${CMAKE_COMMAND} -E copy \"${PROJECT_BINARY_DIR}/dejavu-sans-ttf-2.37/ttf/DejaVuSans.ttf\" \"${CMAKE_INSTALL_PREFIX}/AppDir/usr/lib/fonts\")
 
 					execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink \"usr/bin/\$<TARGET_FILE_NAME:${TARGET}>\" \"AppRun\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}/AppDir\")
 					execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink \"usr/share/applications/\$<TARGET_FILE_BASE_NAME:${TARGET}>.desktop\" \"\$<TARGET_FILE_BASE_NAME:${TARGET}>.desktop\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}/AppDir\")

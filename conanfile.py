@@ -30,7 +30,7 @@ class QtAppBaseConan(ConanFile):
     tool_requires = ["cmake/3.21.7", "ninja/1.11.1"]
     # ---Sources---
     exports = ["info.json", "LICENSE"]
-    exports_sources = ["*.txt", "src/*", "CMake/*"]
+    exports_sources = ["info.json", "*.txt", "src/*", "CMake/*"]
     # ---Binary model---
     settings = "os", "compiler", "build_type", "arch"
     options = {}
@@ -57,6 +57,8 @@ class QtAppBaseConan(ConanFile):
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
+        if self.settings.os == "Android":
+            cmake.build(target="aab")
 
     def package(self):
         cmake = CMake(self)
