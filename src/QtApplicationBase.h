@@ -128,6 +128,7 @@ void QtApplicationBase<T>::init() {
 	                           QString::number(QCoreApplication::applicationPid()), QString::fromLocal8Bit(qVersion()));
 	qInfo() << "Qt" << qPrintable(QLibraryInfo::version().toString().prepend("v")) << "dbg:" << QLibraryInfo::isDebugBuild()
 	        << "prefix path:" << QLibraryInfo::path(QLibraryInfo::PrefixPath);
+	qInfo() << "cwd:" << QDir::currentPath();
 	qInfo() << "data location:" << getDataLocation();
 	qInfo() << "config location:" << getConfigLocation();
 	qInfo() << "cache location:" << getCacheLocation();
