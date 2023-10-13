@@ -1,6 +1,7 @@
 find_package(Qt6 REQUIRED COMPONENTS Core)
 
-set(MAT_ICONS_BASE_URL "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/@icon_name@/default/48px.svg")
+#set(MAT_ICONS_BASE_URL "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/@icon_name@/default/48px.svg")
+set(MAT_ICONS_BASE_URL "https://raw.githubusercontent.com/Templarian/MaterialDesign/master/svg/@icon_name@.svg")
 
 # create_material_icon_theme(THEME_NAME <icon_theme_name> DIR <output_dir> ICONS <icon_name>... [FILES <generated_files_of_theme>])
 function(create_material_icon_theme)

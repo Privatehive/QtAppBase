@@ -89,7 +89,7 @@ void LogMessageHandler::dbug_msg_handler(QtMsgType type, const QMessageLogContex
 #ifdef QT_NO_DEBUG
 			text += QString(" DEBUG    : %1").arg(rMessage);
 #else
-			text += QString(" DEBUG    %1: %2%3 (%4, %5)")
+			text += QString(" DEBUG    %1: %2%3 [file://%4:%5]")
 			         .arg(rContext.category)
 			         .arg(QString(MAX_CAT_LENGTH - QString(rContext.category).size(), QChar(' ')))
 			         .arg(rMessage)
@@ -102,7 +102,7 @@ void LogMessageHandler::dbug_msg_handler(QtMsgType type, const QMessageLogContex
 #ifdef QT_NO_DEBUG
 			text += QString(" INFO    : %1").arg(rMessage);
 #else
-			text += QString(" INFO     %1: %2%3 (%4, %5)")
+			text += QString(" INFO     %1: %2%3 [file://%4:%5]")
 			         .arg(rContext.category)
 			         .arg(QString(MAX_CAT_LENGTH - QString(rContext.category).size(), QChar(' ')))
 			         .arg(rMessage)
@@ -115,7 +115,7 @@ void LogMessageHandler::dbug_msg_handler(QtMsgType type, const QMessageLogContex
 #ifdef QT_NO_DEBUG
 			text += QString(" WARNING  : %1").arg(rMessage);
 #else
-			text += QString(" WARNING  %1: %2%3 (%4, %5)")
+			text += QString(" WARNING  %1: %2%3 [file://%4:%5]")
 			         .arg(rContext.category)
 			         .arg(QString(MAX_CAT_LENGTH - QString(rContext.category).size(), QChar(' ')))
 			         .arg(rMessage)
@@ -128,7 +128,7 @@ void LogMessageHandler::dbug_msg_handler(QtMsgType type, const QMessageLogContex
 #ifdef QT_NO_DEBUG
 			text += QString(" CRITICAL : %1").arg(rMessage);
 #else
-			text += QString(" CRITICAL %1: %2%3 (%4, %5)")
+			text += QString(" CRITICAL %1: %2%3 [file://%4:%5]")
 			         .arg(rContext.category)
 			         .arg(QString(MAX_CAT_LENGTH - QString(rContext.category).size(), QChar(' ')))
 			         .arg(rMessage)
@@ -141,7 +141,7 @@ void LogMessageHandler::dbug_msg_handler(QtMsgType type, const QMessageLogContex
 #ifdef QT_NO_DEBUG
 			text += QString(" FATAL    : %1").arg(rMessage);
 #else
-			text += QString(" FATAL    %1: %2%3 (%4, %5)")
+			text += QString(" FATAL    %1: %2%3 [file://%4:%5]")
 			         .arg(rContext.category)
 			         .arg(QString(MAX_CAT_LENGTH - QString(rContext.category).size(), QChar(' ')))
 			         .arg(rMessage)

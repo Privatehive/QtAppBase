@@ -79,7 +79,9 @@ macro(qt_app_setup)
 		message(STATUS "Run target 'aab' to build AAB")
 	endif()
 
-	find_package(Qt6 REQUIRED COMPONENTS Core)
+	find_package(Qt6 REQUIRED COMPONENTS Core Quick)
+
+	qt_policy(SET QTP0001 NEW)
 
 	qt_standard_project_setup()
 
