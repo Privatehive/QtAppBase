@@ -16,7 +16,7 @@ class QTAPPBASE_EXPORT QtApplicationBase : public T {
 
  public:
 	QtApplicationBase(int &argc, char **argv) : T(argc, argv) { init(); }
-	void set(const QString &applicationName, const QString &applicationVersion, const QString &domain);
+	void set(const QString &applicationName, const QString &applicationVersion, const QString &domainReversed);
 	// Must only be called once
 	int start();
 
@@ -28,13 +28,17 @@ class QTAPPBASE_EXPORT QtApplicationBase : public T {
 	void init();
 };
 
+// provide the domain in reverse notation com.github.tereius instead of tereius.github.com
 template<class T>
-void QtApplicationBase<T>::set(const QString &applicationName, const QString &applicationVersion, const QString &domain) {
+void QtApplicationBase<T>::set(const QString &applicationName, const QString &applicationVersion, const QString &domainReversed) {
 
 	QCoreApplication::setApplicationName(applicationName);
 	QCoreApplication::setApplicationVersion(applicationVersion);
-	QCoreApplication::setOrganizationDomain(domain);
-	QCoreApplication::setOrganizationName("");
+	QCoreApplication::setOrganizationDomain(domainReversed);
+	auto domainSplit = domainReversed.split(".", Qt::SkipEmptyParts);
+	if(!domainSplit.isEmpty()) {
+		QCoreApplication::setOrganizationName(domainSplit.last());
+	}
 }
 
 template<class T>
@@ -47,7 +51,6 @@ QString QtApplicationBase<T>::getCacheLocation() {
 #endif
 }
 
-
 template<class T>
 QString QtApplicationBase<T>::getDataLocation() {
 
@@ -57,6 +60,7 @@ QString QtApplicationBase<T>::getDataLocation() {
 	return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
 #endif
 }
+
 template<class T>
 QString QtApplicationBase<T>::getConfigLocation() {
 
@@ -91,9 +95,15 @@ void QtApplicationBase<T>::init() {
 #if defined(INFO_PROJECTNAME) && defined(INFO_VERSION_MAJOR) && defined(INFO_VERSION_MINOR) && defined(INFO_VERSION_PATCH) && \
  defined(INFO_DOMAIN)
 	set(INFO_PROJECTNAME, QString("%1.%2.%3").arg(INFO_VERSION_MAJOR).arg(INFO_VERSION_MINOR).arg(INFO_VERSION_PATCH), INFO_DOMAIN);
-#else
-	qWarning() << "missing app info defines. you should call 'set()' and provide the app infos yourself!";
 #endif
+
+	Q_ASSERT_X(!QCoreApplication::applicationName().isEmpty(), "QtApplicationBase::init",
+	           "QCoreApplication::applicationName must not be empty - call set() or provide the compile definition: INFO_PROJECTNAME");
+	Q_ASSERT_X(!QCoreApplication::organizationDomain().isEmpty(), "QtApplicationBase::init",
+	           "QCoreApplication::organizationDomain must not be empty - call set() or provide the compile definition: INFO_DOMAIN");
+	Q_ASSERT_X(!QCoreApplication::applicationVersion().isEmpty(), "QtApplicationBase::init",
+	           "QCoreApplication::applicationVersion must not be empty - call set() or provide the compile definitions: INFO_VERSION_MAJOR, "
+	           "INFO_VERSION_MINOR, INFO_VERSION_PATCH");
 
 #if(QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
 	QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
@@ -120,12 +130,11 @@ void QtApplicationBase<T>::init() {
 	settings.endGroup();
 	settings.sync();
 
-	LogMessageHandler logMessageHandler;
-	logMessageHandler.prepare(getDataLocation());
+	LogMessageHandler::prepare(getDataLocation());
 
-	qInfo().noquote() << QString("Starting app \"%1\" v%2 with PID %3 using Qt %4")
+	qInfo().noquote() << QString("Starting app \"%1\" v%2 with PID %3 AppId %4")
 	                      .arg(QCoreApplication::applicationName(), QCoreApplication::applicationVersion(),
-	                           QString::number(QCoreApplication::applicationPid()), QString::fromLocal8Bit(qVersion()));
+	                           QString::number(QCoreApplication::applicationPid()), QCoreApplication::organizationName());
 	qInfo() << "Qt" << qPrintable(QLibraryInfo::version().toString().prepend("v")) << "dbg:" << QLibraryInfo::isDebugBuild()
 	        << "prefix path:" << QLibraryInfo::path(QLibraryInfo::PrefixPath);
 	qInfo() << "cwd:" << QDir::currentPath();

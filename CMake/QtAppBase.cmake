@@ -13,6 +13,7 @@ macro(qt_app_project_setup PROJECT_SETUP_INFO_VAR)
 	if(NOT EXISTS "${PROJECT_SOURCE_DIR}/info.json")
 		message(NOTICE "Missing info.json file in project folder. Creating a generic one.")
 		string(TIMESTAMP current_year %Y)
+		string(TIMESTAMP timestamp_id %s UTC)
 		file(WRITE "${PROJECT_SOURCE_DIR}/info.json" "{
   \"version\": {
     \"major\": 1,
@@ -22,6 +23,7 @@ macro(qt_app_project_setup PROJECT_SETUP_INFO_VAR)
   },
   \"projectName\": \"GenericProject\",
   \"projectDescription\": \"-\",
+  \"projectId\": \"${timestamp_id}\",
   \"vendor\": \"-\",
   \"contact\": \"-\",
   \"domain\": \"-\",

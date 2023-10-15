@@ -2,6 +2,8 @@ include(GenerateExportHeader)
 
 
 set(INSTALL_APPS OFF CACHE BOOL "Install test apps")
+set(FEATURE_SECRETS_MANAGER ON CACHE BOOL "Enables access to the OS secret manager, or a generic one if the OS doesn't provide one")
+
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Quick Qml)
 
 # lib
@@ -12,6 +14,25 @@ qt_add_library(QtAppBase
 							 LogMessageHandler.h
 							 LogMessageHandler.cpp
 							 )
+
+if(FEATURE_SECRETS_MANAGER)
+	find_package(Qt6Keychain REQUIRED)
+	target_sources(QtAppBase PRIVATE SecretsManager.h SecretsManager.cpp)
+	if(LINUX)
+		find_package(Qt6 REQUIRED COMPONENTS DBus)
+		message(STATUS "Enabled Secrets Manager for Linux")
+		target_sources(QtAppBase PRIVATE linux/SecretsManagerImpl.cpp)
+		target_include_directories(QtAppBase PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/linux> $<INSTALL_INTERFACE:include>)
+	elseif(WIN32)
+		message(STATUS "Enabled Secrets Manager for Windows")
+		target_include_directories(QtAppBase PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/windows> $<INSTALL_INTERFACE:include>)
+	elseif(ANDROID)
+		message(STATUS "Enabled Secrets Manager for Android")
+		target_sources(QtAppBase PRIVATE android/SecretsManagerImpl.cpp)
+		target_include_directories(QtAppBase PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/android> $<INSTALL_INTERFACE:include>)
+	endif()
+	target_link_libraries(QtAppBase PUBLIC qt6keychain)
+endif()
 
 generate_export_header(QtAppBase EXPORT_FILE_NAME QtApplicationBaseExport.h)
 set_target_properties(QtAppBase PROPERTIES PUBLIC_HEADER "LogMessageHandler.h;QtApplicationBase.h;AdvancedQmlApplicationEngine.h;${CMAKE_CURRENT_BINARY_DIR}/QtApplicationBaseExport.h")
@@ -57,12 +78,23 @@ if(OFF)
 	endif()
 endif()
 
-# qml test app
-qt_add_executable(QtAppBase_test_qml mainQml.cpp)
-target_link_libraries(QtAppBase_test_qml PRIVATE QtAppBase)
+set(QT_QML_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
-qt_add_qml_module(QtAppBase_test_qml URI Application VERSION 1.0 RESOURCE_PREFIX / QML_FILES
-									qml/main.qml
-									)
+if(FEATURE_SECRETS_MANAGER)
+	# qml test app
+	qt_add_executable(QtAppBase_test_qml mainQml.cpp)
+	target_link_libraries(QtAppBase_test_qml PRIVATE QtAppBase)
 
-install_app(QtAppBase_test_qml)
+	qt_add_qml_module(QtAppBase_test_qml
+										URI QtAppBase
+
+										QML_FILES
+										QtAppBase/main.qml
+
+										SOURCES
+										Secret.h
+										Secret.cpp
+										)
+
+	install_app(QtAppBase_test_qml)
+endif()

@@ -33,8 +33,11 @@ class QtAppBaseConan(ConanFile):
     exports_sources = ["info.json", "*.txt", "src/*", "CMake/*"]
     # ---Binary model---
     settings = "os", "compiler", "build_type", "arch"
-    options = {}
-    default_options = {"qt/*:GUI": True,
+    options = {"shared": [True, False], "fPIC": [True, False], "secretsManager": [True, False]}
+    default_options = {"shared": True,
+                       "fPIC": True,
+                       "secretsManager": True,
+                       "qt/*:GUI": True,
                        "qt/*:opengl": "desktop",
                        "qt/*:qtbase": True,
                        "qt/*:widgets": True,
@@ -47,9 +50,14 @@ class QtAppBaseConan(ConanFile):
     # ---Folders---
     no_copy_source = False
 
+    def requirements(self):
+        if self.options.secretsManager:
+            self.requires("qtkeychain/main@%s/stable" % self.user)
+
     def generate(self):
         ms = VirtualBuildEnv(self)
         tc = CMakeToolchain(self, generator="Ninja")
+        tc.variables["FEATURE_SECRETS_MANAGER"] = self.options.secretsManager
         tc.generate()
         ms.generate()
 

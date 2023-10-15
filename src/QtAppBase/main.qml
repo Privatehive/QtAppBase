@@ -1,5 +1,6 @@
 import QtQuick.Controls
 import QtQuick
+import QtAppBase
 
 ApplicationWindow {
 
@@ -10,18 +11,26 @@ ApplicationWindow {
 		anchors.centerIn: parent
 
 		Label {
-			text: "test"
+			text: "secret: " + secret.secret
 		}
+
+		TextField {
+            width: 240
+            text: secret.secret
+            onTextEdited: {
+            	secret.secret = text
+            }
+        }
 
 		Button {
-			text: "open dialog " + Window.contentItem
+			text: "open dialog"
 			onClicked: dialog.open()
 		}
-	}
 
-	Component.onCompleted: {
-
-		console.warn("----- " + Window.contentItem)
+		Secret {
+			id: secret
+			name: "test"
+		}
 	}
 
 	Dialog {

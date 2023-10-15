@@ -7,6 +7,7 @@
   },
   "projectName": "qt_app_base",
   "projectDescription": "Provides the foundation of every Qt based App",
+  "projectId": 1697294334,
   "vendor": "Björn Stresing",
   "contact": "bjoern.stresing@gmx.de",
   "domain": "com.github.tereius",
