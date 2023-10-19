@@ -15,8 +15,8 @@ jobs:
     - template: buildConanRecipe.yml@templates
       parameters:
         conanEnv: {
-          CONAN_HOST_PROFILE_PATH: "./hostProfiles/androidArmv7.profile"
-          CONAN_REMOTES: "https://conan.privatehive.de/artifactory/api/conan/public-conan",
+          CONAN_HOST_PROFILE_PATH: "./hostProfiles/androidArmv7.profile",
+          CONAN_REMOTES: "https://conan.privatehive.de/artifactory/api/conan/public-conan"
         }
 
 - job: Linux
@@ -27,7 +27,7 @@ jobs:
   - template: buildConanRecipe.yml@templates
     parameters:
       conanEnv: {
-        CONAN_REMOTES: "https://conan.privatehive.de/artifactory/api/conan/public-conan",
+        CONAN_REMOTES: "https://conan.privatehive.de/artifactory/api/conan/public-conan"
       }
 
 - job: Windows
@@ -38,7 +38,7 @@ jobs:
   - template: buildConanRecipe.yml@templates
     parameters:
       conanEnv: {
-        CONAN_REMOTES: "https://conan.privatehive.de/artifactory/api/conan/public-conan",
+        CONAN_REMOTES: "https://conan.privatehive.de/artifactory/api/conan/public-conan"
       }
 
 - job: Upload
@@ -55,5 +55,5 @@ jobs:
       conanEnv: {
         CONAN_UPLOAD: "https://conan.privatehive.de/artifactory/api/conan/public-conan",
         CONAN_LOGIN_USERNAME: "ci",
-        CONAN_PASSWORD: "$(secret)",
+        CONAN_PASSWORD: "$(secret)"
       }
