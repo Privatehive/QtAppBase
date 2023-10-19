@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.21.1)
 set(current_dir ${CMAKE_CURRENT_LIST_DIR})
 
 macro(qt_app_project_setup PROJECT_SETUP_INFO_VAR)
@@ -48,17 +48,17 @@ macro(qt_app_setup)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 	# Configure a header file to pass some of the CMake settings to the source code.
-	include_directories("${PROJECT_BINARY_DIR}")
-	file(WRITE "${PROJECT_BINARY_DIR}/info.h" "")
+	include_directories("${PROJECT_BINARY_DIR}/.qtappbase")
+	file(WRITE "${PROJECT_BINARY_DIR}/.qtappbase/info.h" "")
 	foreach(var ${info})
 		string(TOUPPER "${var}" UPPER_VAR)
 		string(REPLACE "." "_" UPPER_VAR "${UPPER_VAR}")
 		list(LENGTH ${var} LIST_LEN)
 		if(LIST_LEN EQUAL 1)
 			if(${${var}} MATCHES "^[0-9]+$")
-				file(APPEND "${PROJECT_BINARY_DIR}/info.h" "#define ${UPPER_VAR} ${${var}}\n")
+				file(APPEND "${PROJECT_BINARY_DIR}/.qtappbase/info.h" "#define ${UPPER_VAR} ${${var}}\n")
 			else()
-				file(APPEND "${PROJECT_BINARY_DIR}/info.h" "#define ${UPPER_VAR} \"${${var}}\"\n")
+				file(APPEND "${PROJECT_BINARY_DIR}/.qtappbase/info.h" "#define ${UPPER_VAR} \"${${var}}\"\n")
 			endif()
 		endif()
 	endforeach()
@@ -81,9 +81,7 @@ macro(qt_app_setup)
 		message(STATUS "Run target 'aab' to build AAB")
 	endif()
 
-	find_package(Qt6 REQUIRED COMPONENTS Core Quick)
-
-	qt_policy(SET QTP0001 NEW)
+	find_package(Qt6 REQUIRED COMPONENTS Core)
 
 	qt_standard_project_setup()
 
@@ -108,6 +106,61 @@ macro(qt_app_setup)
 								 include (CPack)
 								 )
 endmacro()
+
+function(target_mark_public_header TARGET)
+
+	get_target_property(CURRENT_PUBLIC_HEADER ${TARGET} PUBLIC_HEADER)
+	if(CURRENT_PUBLIC_HEADER)
+		set_target_properties(${TARGET} PROPERTIES PUBLIC_HEADER "${ARGN};${CURRENT_PUBLIC_HEADER}")
+	else()
+		set_target_properties(${TARGET} PROPERTIES PUBLIC_HEADER "${ARGN}")
+	endif()
+	get_target_property(CURRENT_PUBLIC_HEADERsssd ${TARGET} PUBLIC_HEADER)
+endfunction()
+
+function(add_dependency TARGET)
+
+	set_property(
+					TARGET ${TARGET}
+					APPEND PROPERTY
+					INSTALL_DEPENDS "${ARGN}"
+	)
+endfunction()
+
+function(install_qt_library TARGET)
+
+	set(staging_prefix ".")
+	install(TARGETS ${TARGET}
+					EXPORT ${TARGET}-Targets
+					ARCHIVE DESTINATION "${staging_prefix}/${CMAKE_INSTALL_LIBDIR}"
+					LIBRARY DESTINATION "${staging_prefix}/${CMAKE_INSTALL_LIBDIR}"
+					RUNTIME DESTINATION "${staging_prefix}/${CMAKE_INSTALL_BINDIR}"
+					PUBLIC_HEADER DESTINATION "${staging_prefix}/${CMAKE_INSTALL_INCLUDEDIR}"
+					)
+
+	install(EXPORT ${TARGET}-Targets
+					DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET}"
+					)
+
+	file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}Config.cmake.in" "include(CMakeFindDependencyMacro)")
+	file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}Config.cmake.in" "\nfind_dependency(Qt6 COMPONENTS Core)")
+
+	get_target_property(INSTALL_DEPENDS ${TARGET} INSTALL_DEPENDS)
+	if(INSTALL_DEPENDS)
+		foreach(DEPENDS IN LISTS INSTALL_DEPENDS)
+			file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}Config.cmake.in" "\nfind_dependency(${DEPENDS})")
+		endforeach()
+	endif()
+
+	file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}Config.cmake.in" "\ninclude(\"\${CMAKE_CURRENT_LIST_DIR}/${TARGET}-Targets.cmake\")")
+
+	configure_file(${CMAKE_CURRENT_BINARY_DIR}/${TARGET}Config.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}Config.cmake COPYONLY)
+
+	install(
+					FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}Config.cmake
+					DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET}"
+	)
+endfunction()
 
 # https://doc.qt.io/qt-6/qt-query-qml-module.html#example
 # Qt can't install qml modules yet. We have to provide a solution.
@@ -163,11 +216,13 @@ function(install_qml_module TARGET)
 					DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET}"
 	)
 
-	# Install the QML module runtime loadable plugin
-	install(TARGETS "${module_plugin_target}"
-					LIBRARY DESTINATION "${module_dir}"
-					RUNTIME DESTINATION "${module_dir}"
-					)
+	if(TARGET "${module_plugin_target}")
+		# Install the QML module runtime loadable plugin
+		install(TARGETS "${module_plugin_target}"
+						LIBRARY DESTINATION "${module_dir}"
+						RUNTIME DESTINATION "${module_dir}"
+						)
+	endif()
 
 	# Install the QML module meta information.
 	install(FILES "${module_qmldir}" DESTINATION "${module_dir}")

@@ -132,9 +132,9 @@ void QtApplicationBase<T>::init() {
 
 	LogMessageHandler::prepare(getDataLocation());
 
-	qInfo().noquote() << QString("Starting app \"%1\" v%2 with PID %3 AppId %4")
+	qInfo().noquote() << QString("Starting app \"%1\" v%2 ID %4 PID %3")
 	                      .arg(QCoreApplication::applicationName(), QCoreApplication::applicationVersion(),
-	                           QString::number(QCoreApplication::applicationPid()), QCoreApplication::organizationName());
+	                           QString::number(QCoreApplication::applicationPid())).arg(INFO_PROJECTID);
 	qInfo() << "Qt" << qPrintable(QLibraryInfo::version().toString().prepend("v")) << "dbg:" << QLibraryInfo::isDebugBuild()
 	        << "prefix path:" << QLibraryInfo::path(QLibraryInfo::PrefixPath);
 	qInfo() << "cwd:" << QDir::currentPath();

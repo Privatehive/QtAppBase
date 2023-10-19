@@ -14,7 +14,7 @@ required_conan_version = ">=2.0"
 class QtAppBaseConan(ConanFile):
     jsonInfo = json.load(open("info.json", 'r'))
     # ---Package reference---
-    name = jsonInfo["projectName"]
+    name = jsonInfo["projectName"].lower()
     version = "%u.%u.%u" % (jsonInfo["version"]["major"], jsonInfo["version"]["minor"], jsonInfo["version"]["patch"])
     user = jsonInfo["domain"]
     channel = "%s" % ("snapshot" if jsonInfo["version"]["snapshot"] else "stable")
@@ -33,10 +33,11 @@ class QtAppBaseConan(ConanFile):
     exports_sources = ["info.json", "*.txt", "src/*", "CMake/*"]
     # ---Binary model---
     settings = "os", "compiler", "build_type", "arch"
-    options = {"shared": [True, False], "fPIC": [True, False], "secretsManager": [True, False]}
+    options = {"shared": [True, False], "fPIC": [True, False], "secretsManager": [True, False], "qml": [True, False]}
     default_options = {"shared": True,
                        "fPIC": True,
                        "secretsManager": True,
+                       "qml": True,
                        "qt/*:GUI": True,
                        "qt/*:opengl": "desktop",
                        "qt/*:qtbase": True,
@@ -58,6 +59,7 @@ class QtAppBaseConan(ConanFile):
         ms = VirtualBuildEnv(self)
         tc = CMakeToolchain(self, generator="Ninja")
         tc.variables["FEATURE_SECRETS_MANAGER"] = self.options.secretsManager
+        tc.variables["FEATURE_QML"] = self.options.qml
         tc.generate()
         ms.generate()
 
@@ -74,3 +76,5 @@ class QtAppBaseConan(ConanFile):
 
     def package_info(self):
         self.cpp_info.builddirs = ["lib/cmake"]
+        if self.options.qml:
+            self.runenv_info.prepend_path("QML_IMPORT_PATH", os.path.join(self.package_folder, "qml"))

@@ -1,5 +1,0 @@
-include(CMakeFindDependencyMacro)
-
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Quick Qml)
-
-include("${CMAKE_CURRENT_LIST_DIR}/QtAppBase-Targets.cmake")

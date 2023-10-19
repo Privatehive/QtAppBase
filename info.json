@@ -5,7 +5,7 @@
     "patch": 0,
     "snapshot": true
   },
-  "projectName": "qt_app_base",
+  "projectName": "QtAppBase",
   "projectDescription": "Provides the foundation of every Qt based App",
   "projectId": 1697294334,
   "vendor": "Björn Stresing",
@@ -18,5 +18,5 @@
     "QML"
   ],
   "homepage": "https://www.qt.io/",
-  "license": "GPL v3"
+  "license": "GPLv3"
 }
