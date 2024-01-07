@@ -26,7 +26,7 @@ class QtAppBaseConan(ConanFile):
     homepage = jsonInfo["homepage"]
     url = jsonInfo["repository"]
     # ---Requirements---
-    requires = ["qt/[~6.5]@%s/stable" % user]
+    requires = ["qt/[>=6.5.0]@%s/stable" % user]
     tool_requires = ["cmake/3.21.7", "ninja/1.11.1"]
     # ---Sources---
     exports = ["info.json", "LICENSE"]
@@ -36,8 +36,8 @@ class QtAppBaseConan(ConanFile):
     options = {"shared": [True, False], "fPIC": [True, False], "secretsManager": [True, False], "qml": [True, False]}
     default_options = {"shared": True,
                        "fPIC": True,
-                       "secretsManager": True,
-                       "qml": True,
+                       "secretsManager": False,
+                       "qml": False,
                        "qt/*:GUI": True,
                        "qt/*:opengl": "desktop",
                        "qt/*:qtbase": True,

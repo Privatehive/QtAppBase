@@ -2,30 +2,40 @@
 #include "SecretsManager.h"
 
 
-Secret::Secret(QObject *parent) : QObject(parent), mName() {}
+Secret::Secret(QObject *parent) : QObject(parent), mAlias(), mSecretValue() {}
 
-QString Secret::getName() const {
+QString Secret::getAlias() const {
 
-	return mName;
+	return mAlias;
 }
 
-void Secret::setName(const QString &name) {
+void Secret::setAlias(const QString &alias) {
 
-	mName = name;
-	emit nameChanged();
-	emit secretChanged();
+	mAlias = alias;
+	SecretsManager::readSecret(
+	 getAlias(),
+	 [this](QString secret) {
+		 mSecretValue = secret;
+		 emit valueChanged();
+		 emit secretRead(secret);
+	 },
+	 this);
+	emit aliasChanged();
 }
 
-QString Secret::getSecret() const {
+QString Secret::getValue() const {
 
-	SecretsManager m;
-	auto secret = m.readSecretSync(getName());
-	return secret;
+	return mSecretValue;
 }
 
-void Secret::setSecret(const QString &secret) {
+void Secret::setValue(const QString &secret) {
 
-	SecretsManager m;
-	m.writeSecretSync(getName(), secret);
-	emit secretChanged();
+	SecretsManager::writeSecret(getAlias(), secret, [this]() { emit secretWritten(); }, this);
+	mSecretValue = secret;
+	emit valueChanged();
+}
+
+void Secret::deleteSecret(const QString &alias) {
+
+	SecretsManager::deleteSecret(alias, [this, alias]() { emit secretDeleted(alias); }, this);
 }

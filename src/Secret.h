@@ -1,26 +1,33 @@
 #pragma once
+#include "QtApplicationBaseExport.h"
 #include <QObject>
 #include <QtQmlIntegration>
 
 
-class Secret : public QObject {
+class QTAPPBASE_EXPORT Secret : public QObject {
 
 	Q_OBJECT
 	QML_ELEMENT
-	Q_PROPERTY(QString name READ getName WRITE setName NOTIFY nameChanged)
-	Q_PROPERTY(QString secret READ getSecret WRITE setSecret NOTIFY secretChanged)
+	Q_PROPERTY(QString alias READ getAlias WRITE setAlias NOTIFY aliasChanged)
+	Q_PROPERTY(QString value READ getValue WRITE setValue NOTIFY valueChanged)
 
  public:
 	explicit Secret(QObject *parent = nullptr);
-	QString getName() const;
-	void setName(const QString &name);
-	QString getSecret() const;
-	void setSecret(const QString &secret);
+	QString getAlias() const;
+	void setAlias(const QString &alias);
+	QString getValue() const;
+	void setValue(const QString &secret);
+	Q_INVOKABLE void deleteSecret(const QString &alias);
 
  signals:
-	void nameChanged();
-	void secretChanged();
+	void aliasChanged();
+	void valueChanged();
+	void secretWritten();
+	void secretRead(const QString &secret);
+	void secretDeleted(const QString &alias);
 
  private:
-	QString mName;
+	Q_DISABLE_COPY(Secret);
+	QString mAlias;
+	QString mSecretValue;
 };

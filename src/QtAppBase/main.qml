@@ -29,7 +29,7 @@ ApplicationWindow {
 
 		Secret {
 			id: secret
-			name: "test"
+			alias: "test"
 		}
 	}
 

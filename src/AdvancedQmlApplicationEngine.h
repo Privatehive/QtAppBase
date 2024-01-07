@@ -21,7 +21,6 @@ class QTAPPBASE_EXPORT AdvancedQmlApplicationEngine : public QQmlApplicationEngi
 	explicit AdvancedQmlApplicationEngine(QObject *parent = nullptr);
 	void setHotReload(bool enable);
 	void loadRootItem(const QString &rootItem, bool useQuickView = true);
-	void loadRootItem(const QUrl &rootItem, bool useQuickView);
 	bool hasRootItem() const;
 
  public slots:
@@ -36,6 +35,7 @@ class QTAPPBASE_EXPORT AdvancedQmlApplicationEngine : public QQmlApplicationEngi
  private:
 	Q_DISABLE_COPY(AdvancedQmlApplicationEngine)
 
+	void loadRootItem(const QUrl &rootItem, bool useQuickView);
 	void init();
 	void connectWatcher();
 	void disconnectWatcher();

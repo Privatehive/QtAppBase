@@ -6,7 +6,7 @@
 
 /*!
  *
- * \brief Writes qDebug, qInof, ... log messages to file and std::out
+ * \brief Writes qDebug, qInfo, ... log messages to file and std::out
  *
  */
 class QTAPPBASE_EXPORT LogMessageHandler {

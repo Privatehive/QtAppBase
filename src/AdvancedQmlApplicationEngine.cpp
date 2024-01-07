@@ -3,6 +3,7 @@
 #include <QDir>
 #include <QFileSystemWatcher>
 #include <QIcon>
+#include <QLoggingCategory>
 #include <QMetaObject>
 #include <QQmlComponent>
 #include <QQmlContext>
@@ -13,6 +14,8 @@
 #include <QThread>
 #include <QTimer>
 
+
+Q_LOGGING_CATEGORY(qmlengine, "qmlengine")
 
 AdvancedQmlApplicationEngine::AdvancedQmlApplicationEngine(QObject *parent) :
  QQmlApplicationEngine(parent), mHotReloading(false), mpWatcher(new QFileSystemWatcher(this)), mpTimer(new QTimer(this)), mpView(nullptr) {
@@ -30,7 +33,7 @@ void AdvancedQmlApplicationEngine::init() {
 	// setImportPathList({QLatin1String("/home/bjoern/.conan/data/qt/6.4.2/_/_/package/98e9915d107b9d8446edaf435ac655e84843eb36/res/archdatadir/qml")}/*QStringList(QLatin1String("qrc:/"))+engine.importPathList()+QString::fromLocal8Bit(QML_IMPORT_PATHS).split(QLatin1String(","))*/);
 	// setPluginPathList({QLatin1String("qrc:/"), QLatin1String("qrc:/qt-project.org/imports"),
 	// QLatin1String("/home/bjoern/.conan/data/qt/6.4.2/_/_/package/98e9915d107b9d8446edaf435ac655e84843eb36/res/archdatadir/plugins")}/*QStringList(QLatin1String("qrc:/"))+engine.pluginPathList()+QString::fromLocal8Bit(QML_PLUGIN_PATHS).split(QLatin1String(","))*/);
-	qInfo() << "Starting AdvancedQmlApplicationEngine";
+	qInfo(qmlengine) << "Starting AdvancedQmlApplicationEngine";
 	QQuickWindow::setTextRenderType(QQuickWindow::QtTextRendering); // Use Qt rendering for constant quality beyond all platforms
 }
 
@@ -45,15 +48,18 @@ void AdvancedQmlApplicationEngine::setHotReload(bool enable) {
 // If "useQuickView==false" you have to use ApplicationWindow as you root qml object.
 void AdvancedQmlApplicationEngine::loadRootItem(const QString &rootItem, bool useQuickView /*= true*/) {
 
-	qInfo() << "loading qml root item";
-	qInfo() << "qml import paths:" << importPathList();
-	qInfo() << "qml plugin paths:" << pluginPathList();
+#ifdef Q_OS_ANDROID
+	addImportPath("qrc:/qt/qml"); // Workaround for Bug https://bugreports.qt.io/browse/QTBUG-120445
+#endif
+	qInfo(qmlengine) << "loading qml root item";
+	qInfo(qmlengine) << "qml import paths:" << importPathList();
+	qInfo(qmlengine) << "qml plugin paths:" << pluginPathList();
 	if(qEnvironmentVariableIsSet("QML_DISK_CACHE_PATH")) {
-		qInfo() << "qml cache location (overwritten)" << qgetenv("QML_DISK_CACHE_PATH");
+		qInfo(qmlengine) << "qml cache location (overwritten)" << qgetenv("QML_DISK_CACHE_PATH");
 	} else {
-		qInfo() << "qml cache location (default)" << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+		qInfo(qmlengine) << "qml cache location (default)" << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
 	}
-	qInfo() << "icon search path" << QIcon::themeSearchPaths();
+	qInfo(qmlengine) << "icon search path" << QIcon::themeSearchPaths();
 
 	if(rootItem.startsWith("qrc:"))
 		loadRootItem(QUrl(rootItem), useQuickView);
@@ -75,10 +81,10 @@ void AdvancedQmlApplicationEngine::loadRootItem(const QUrl &rootItem, bool useQu
 			for(const auto &error : mpView->errors()) {
 				errorMsg += QString("Couldn't create GUI: %1").arg(error.toString());
 			}
-			qFatal() << errorMsg;
+			qFatal(qmlengine) << errorMsg;
 		} else {
 			for(const auto &error : mpView->errors()) {
-				qFatal() << error;
+				qFatal(qmlengine) << error;
 			}
 			mpView->show();
 		}
@@ -86,7 +92,7 @@ void AdvancedQmlApplicationEngine::loadRootItem(const QUrl &rootItem, bool useQu
 		load(rootItem);
 		if(rootObjects().isEmpty()) {
 			const auto errorMsg = QString("Couldn't create GUI: %1").arg(rootItem.toDisplayString());
-			qFatal() << errorMsg;
+			qFatal(qmlengine) << errorMsg;
 		}
 	}
 	if(mHotReloading) connectWatcher();
@@ -113,14 +119,14 @@ void AdvancedQmlApplicationEngine::connectWatcher() {
 			});
 			auto filesDirsToWatch = findQmlFilesRecursive(dir);
 			for(const auto &qmlFile : filesDirsToWatch) {
-				qInfo() << "Enabled hot reloading for following file:" << qmlFile;
+				qInfo(qmlengine) << "Enabled hot reloading for following file:" << qmlFile;
 				mpWatcher->addPath(qmlFile);
 			}
 		} else {
-			qWarning() << "Can't install filesystem watcher. Root item it not a local file.";
+			qWarning(qmlengine) << "Can't install filesystem watcher. Root item it not a local file.";
 		}
 	} else {
-		qWarning() << "Can't install filesystem watcher. Missing root item.";
+		qWarning(qmlengine) << "Can't install filesystem watcher. Missing root item.";
 	}
 }
 

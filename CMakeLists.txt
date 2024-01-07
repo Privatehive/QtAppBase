@@ -16,6 +16,7 @@ install(
 				FILES
 				"${CMAKE_SOURCE_DIR}/CMake/JSONParser.cmake"
 				"${CMAKE_SOURCE_DIR}/CMake/QtAppBase.cmake"
+				"${CMAKE_SOURCE_DIR}/CMake/QtAppBaseCommon.cmake"
 				"${CMAKE_SOURCE_DIR}/CMake/MaterialIcons.cmake"
 				"${CMAKE_SOURCE_DIR}/CMake/AppImage.cmake"
 				"${CMAKE_SOURCE_DIR}/CMake/QtAppBase.desktop.in"
@@ -23,3 +24,9 @@ install(
 				DESTINATION
 				"${CMAKE_INSTALL_LIBDIR}/cmake"
 )
+
+install(CODE "
+set(CMAKE_MODULE_PATH \"${CMAKE_SOURCE_DIR}/CMake\" \"${CMAKE_MODULE_PATH}\")
+include(QtAppBaseCommon)
+replace_in_file(\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/cmake/QtAppBase.cmake\" MATCH \"if(FEATURE_QML)\" REPLACE \"if(${FEATURE_QML})\")
+")
