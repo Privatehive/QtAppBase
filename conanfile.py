@@ -53,7 +53,8 @@ class QtAppBaseConan(ConanFile):
             self.requires("qtkeychain/0.14.3@%s/stable" % self.user)
 
     def build_requirements(self):
-        self.tool_requires("qtinstaller/4.8.0@%s/stable" % self.user, visible=True)
+        if self.settings.os == "Windows" or self.settings.os == "Linux":
+            self.tool_requires("qtinstaller/4.8.0@%s/stable" % self.user, visible=True)
 
     def validate(self):
         valid_os = ["Windows", "Linux", "Android"]
