@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <Name>@info.projectName@</Name>
+    <Version>@info.versionString@</Version>
+    <Title>@info.projectDescription@</Title>
+    <Publisher>@info.vendor@</Publisher>
+    <ProductUrl>@info.homepage@</ProductUrl>
+    <StartMenuDir>@info.projectName@</StartMenuDir>
+    <TargetDir>@at@HomeDir@at@/@info.projectName@</TargetDir>
+    <RunProgram>@at@TargetDir@at@/@AppExecDir@/@AppExec@</RunProgram>
+</Installer>

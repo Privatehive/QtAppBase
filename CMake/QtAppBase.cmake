@@ -1,13 +1,30 @@
 cmake_minimum_required(VERSION 3.21.1)
 set(current_dir ${CMAKE_CURRENT_LIST_DIR})
 
-macro(qt_app_project_setup PROJECT_SETUP_INFO_VAR)
+macro(parse_info INFO_FILE)
 
     include(JSONParser)
+    file(READ "${INFO_FILE}" jsonInfo)
+    sbeParseJson(info jsonInfo)
+
+    string(TOLOWER "${info.projectName}" info.projectNameLowerCase)
+    set(info.package "${info.domain}.${info.projectNameLowerCase}")
+    string(REPLACE "." "/" info.packagejni "${info.package}")
+
+    if (${info.version.snapshot})
+        set(info.versionString "${info.version.major}.${info.version.minor}.${info.version.patch}-snapshot")
+    else ()
+        set(info.versionString "${info.version.major}.${info.version.minor}.${info.version.patch}")
+    endif ()
+
+    list(APPEND info info.package info.packagejni info.versionString info.projectNameLowerCase)
+endmacro()
+
+macro(qt_app_project_setup PROJECT_SETUP_INFO_VAR)
 
     if (NOT EXISTS "${PROJECT_SOURCE_DIR}/LICENSE")
-        message(NOTICE "Missing LICENSE file in project folder. Creating a generic one.")
-        file(WRITE "${PROJECT_SOURCE_DIR}/LICENSE" "")
+        message(NOTICE "Missing LICENSE file in project folder. Creating a placeholder.")
+        file(WRITE "${PROJECT_SOURCE_DIR}/LICENSE" "TODO")
     endif ()
 
     if (NOT EXISTS "${PROJECT_SOURCE_DIR}/info.json")
@@ -35,14 +52,8 @@ macro(qt_app_project_setup PROJECT_SETUP_INFO_VAR)
 }")
     endif ()
 
-    # Parse the info.json and write a info.h file
-    file(READ "${PROJECT_SOURCE_DIR}/info.json" jsonInfo)
-    sbeParseJson(info jsonInfo)
-
-    string(TOLOWER "${info.projectName}" info.projectNameLowerCase)
-    set(info.package "${info.domain}.${info.projectNameLowerCase}")
-    string(REPLACE "." "/" info.packagejni "${info.package}")
-    list(APPEND info info.package info.packagejni info.projectNameLowerCase)
+    # Parse the info.json
+    parse_info("${PROJECT_SOURCE_DIR}/info.json")
 
     set(${PROJECT_SETUP_INFO_VAR} "${info.projectName}" "VERSION" "${info.version.major}.${info.version.minor}.${info.version.patch}" "DESCRIPTION" "${info.projectDescription}" "HOMEPAGE_URL" "${info.repository}" "LANGUAGES" "C" "CXX")
 endmacro()
@@ -96,8 +107,14 @@ macro(qt_app_setup)
     if (QT_KNOWN_POLICY_QTP0002)
         qt_policy(SET QTP0002 NEW)
     endif ()
+    if (QT_KNOWN_POLICY_QTP0003)
+        qt_policy(SET QTP0003 NEW)
+    endif ()
 
     qt_standard_project_setup()
+
+    file(COPY "${PROJECT_SOURCE_DIR}/LICENSE" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+    install(FILES "${PROJECT_SOURCE_DIR}/LICENSE" DESTINATION "${CMAKE_INSTALL_PREFIX}")
 
     cmake_language(DEFER CALL
             set (CPACK_PACKAGE_NAME "${info.projectName}")
@@ -117,7 +134,6 @@ macro(qt_app_setup)
             set (CPACK_PACKAGE_CHECKSUM SHA256)
 
             set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\bin\\\\${PROJECT_NAME}${CMAKE_EXECUTABLE_SUFFIX}\\\" -u'")
-            include (CPack)
     )
 endmacro()
 
@@ -141,14 +157,39 @@ function(add_dependency TARGET)
     )
 endfunction()
 
+function(_combine_with_resource_targets TARGET OUT)
+    set(install_targest ${TARGET})
+    foreach (i RANGE 1 100)
+        set(resource_target_name "${TARGET}_resources_${i}")
+        if (TARGET ${resource_target_name})
+            message(STATUS "  found resource target ${resource_target_name}")
+            list(APPEND install_targest "${resource_target_name}")
+        endif ()
+    endforeach ()
+    set(${OUT} ${install_targest} PARENT_SCOPE)
+endfunction()
+
+function(_combine_with_init_targets TARGET OUT)
+    set(install_targest ${TARGET})
+    set(init_target_name "${TARGET}_init")
+    if (TARGET ${init_target_name})
+        message(STATUS "  found init target ${init_target_name}")
+        list(APPEND install_targest "${init_target_name}")
+    endif ()
+    set(${OUT} ${install_targest} PARENT_SCOPE)
+endfunction()
+
 function(install_qt_library TARGET)
 
+    message(STATUS "install_qt_library ${TARGET}")
     set(staging_prefix ".")
-    install(TARGETS ${TARGET}
+    _combine_with_resource_targets(${TARGET} INSTALL_TARGETS)
+    install(TARGETS ${INSTALL_TARGETS}
             EXPORT ${TARGET}-Targets
             ARCHIVE DESTINATION "${staging_prefix}/${CMAKE_INSTALL_LIBDIR}"
             LIBRARY DESTINATION "${staging_prefix}/${CMAKE_INSTALL_LIBDIR}"
             RUNTIME DESTINATION "${staging_prefix}/${CMAKE_INSTALL_BINDIR}"
+            OBJECTS DESTINATION "${staging_prefix}/${CMAKE_INSTALL_LIBDIR}"
             PUBLIC_HEADER DESTINATION "${staging_prefix}/${CMAKE_INSTALL_INCLUDEDIR}"
     )
 
@@ -180,6 +221,7 @@ endfunction()
 # Qt can't install qml modules yet. We have to provide a solution.
 function(install_qml_module TARGET)
 
+    message(STATUS "install_qml_module ${TARGET}")
     qt_query_qml_module(${TARGET}
             URI module_uri
             VERSION module_version
@@ -193,13 +235,17 @@ function(install_qml_module TARGET)
             RESOURCES_DEPLOY_PATHS resources_deploy_paths
     )
 
+    set(include_targets "include(\"\${CMAKE_CURRENT_LIST_DIR}/${TARGET}-Targets.cmake\")")
+
     # Install the QML module backing library
     set(staging_prefix ".")
-    install(TARGETS ${TARGET}
+    _combine_with_resource_targets(${TARGET} INSTALL_TARGETS)
+    install(TARGETS ${INSTALL_TARGETS}
             EXPORT ${TARGET}-Targets
             ARCHIVE DESTINATION "${staging_prefix}/${CMAKE_INSTALL_LIBDIR}"
             LIBRARY DESTINATION "${staging_prefix}/${CMAKE_INSTALL_LIBDIR}"
             RUNTIME DESTINATION "${staging_prefix}/${CMAKE_INSTALL_BINDIR}"
+            OBJECTS DESTINATION "${staging_prefix}/${CMAKE_INSTALL_LIBDIR}"
             PUBLIC_HEADER DESTINATION "${staging_prefix}/${CMAKE_INSTALL_INCLUDEDIR}"
     )
     set(module_dir "${staging_prefix}/qml/${module_target_path}")
@@ -208,20 +254,36 @@ function(install_qml_module TARGET)
             DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET}"
     )
 
-    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}Config.cmake.in" "include (CMakeFindDependencyMacro)
-							# TODO find_package not complete
-							find_package(Qt6 REQUIRED COMPONENTS Core Qml Gui Quick)
-							include(\"\${CMAKE_CURRENT_LIST_DIR}/${TARGET}-Targets.cmake\")
+    if (TARGET "${module_plugin_target}")
+        # Install the QML module runtime loadable plugin
+        _combine_with_init_targets(${module_plugin_target} INSTALL_TARGETS)
+        install(TARGETS ${INSTALL_TARGETS}
+                EXPORT ${module_plugin_target}-Targets
+                ARCHIVE DESTINATION "${module_dir}"
+                LIBRARY DESTINATION "${module_dir}"
+                RUNTIME DESTINATION "${module_dir}"
+                OBJECTS DESTINATION "${module_dir}"
+        )
+        install(EXPORT ${module_plugin_target}-Targets
+                DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET}"
+        )
+        set(include_targets "${include_targets}\ninclude(\"\${CMAKE_CURRENT_LIST_DIR}/${module_plugin_target}-Targets.cmake\")")
+    endif ()
 
-							# Workaround to provide qmlimportscanner with a -importPath arg called during qt_deploy_qml_imports
-							set(qml_import_paths \"\")
-							get_target_property(qml_import_path ${TARGET} QT_QML_IMPORT_PATH)
-							if(qml_import_path)
-							list(APPEND qml_import_paths \${qml_import_path})
-							endif()
-							list(APPEND qml_import_paths \"\${CMAKE_CURRENT_LIST_DIR}/../../../qml\")
-							set_target_properties(${TARGET} PROPERTIES QT_QML_IMPORT_PATH \${qml_import_paths})
-							")
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}Config.cmake.in" "include (CMakeFindDependencyMacro)
+    # TODO find_package not complete
+    find_package(Qt6 REQUIRED COMPONENTS Core Qml Gui Quick)
+    ${include_targets}
+
+    # Workaround to provide qmlimportscanner with a -importPath arg called during qt_deploy_qml_imports
+    set(qml_import_paths \"\")
+    get_target_property(qml_import_path ${TARGET} QT_QML_IMPORT_PATH)
+    if(qml_import_path)
+    list(APPEND qml_import_paths \${qml_import_path})
+    endif()
+    list(APPEND qml_import_paths \"\${CMAKE_CURRENT_LIST_DIR}/../../../qml\")
+    set_target_properties(${TARGET} PROPERTIES QT_QML_IMPORT_PATH \${qml_import_paths})
+    ")
 
     configure_file(${CMAKE_CURRENT_BINARY_DIR}/${TARGET}Config.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}Config.cmake COPYONLY)
 
@@ -229,14 +291,6 @@ function(install_qml_module TARGET)
             FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}Config.cmake
             DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET}"
     )
-
-    if (TARGET "${module_plugin_target}")
-        # Install the QML module runtime loadable plugin
-        install(TARGETS "${module_plugin_target}"
-                LIBRARY DESTINATION "${module_dir}"
-                RUNTIME DESTINATION "${module_dir}"
-        )
-    endif ()
 
     # Install the QML module meta information.
     install(FILES "${module_qmldir}" DESTINATION "${module_dir}")
@@ -329,6 +383,7 @@ endfunction()
 # install a target and more (APKs on Android, AppImage on Linux)
 function(install_app TARGET)
 
+    message(STATUS "install_app ${TARGET}")
     install(TARGETS ${TARGET} BUNDLE DESTINATION . LIBRARY DESTINATION ${CMAKE_INSTALL_BINDIR} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
     if (ANDROID)
@@ -347,10 +402,12 @@ function(install_app TARGET)
         set_target_properties(${TARGET} PROPERTIES QT_ANDROID_VERSION_NAME "${PROJECT_VERSION}")
         message(STATUS "Using Android Version Code '${VERSION_CONDE}' and Version Name '${PROJECT_VERSION}'")
         install(FILES "${CMAKE_CURRENT_BINARY_DIR}/android-build/$<TARGET_NAME:${TARGET}>.apk" DESTINATION .)
+        install(CODE "execute_process(COMMAND adb install \"${CMAKE_CURRENT_BINARY_DIR}/android-build/$<TARGET_NAME:${TARGET}>.apk\")")
     else ()
         qt_generate_deploy_qml_app_script(
                 TARGET ${TARGET}
                 OUTPUT_SCRIPT ${TARGET}_install_app_deploy_script
+                NO_UNSUPPORTED_PLATFORM_ERROR
         )
         install(SCRIPT ${${TARGET}_install_app_deploy_script})
         if (UNIX AND NOT APPLE)
@@ -362,13 +419,40 @@ function(install_app TARGET)
 								 file (INSTALL \"\${so_file}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\")
 								 endforeach ()
 								 message (STATUS \"Qt deployment is missing plugin dependencies on Linux - Installing all Qt plugins (resulting in a bigger package than necessary) \")
-								 file (INSTALL \"${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}\" FILES_MATCHING PATTERN \"*.so\")
+								 file (GLOB_RECURSE so_files LIST_DIRECTORIES false \"${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/*.so.*\")
+								 foreach (so_file IN LISTS so_files)
+								 file (INSTALL \"\${so_file}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}\")
+								 endforeach ()
 								 ")
+        else (WIN32)
+            set(MinGwHome "$ENV{MINGW_HOME}")
+            if (EXISTS "${MinGwHome}")
+                string(REPLACE "\\" "/" MinGwHomeFw "${MinGwHome}")
+                install(CODE "
+set(MINGW_BIN \"${MinGwHomeFw}/bin\")
+file (GET_RUNTIME_DEPENDENCIES RESOLVED_DEPENDENCIES_VAR resolved UNRESOLVED_DEPENDENCIES_VAR unresolved EXECUTABLES \$<TARGET_FILE:${TARGET}> DIRECTORIES \"\${MINGW_BIN}\")
+foreach (dll_file IN LISTS resolved)
+cmake_path(IS_PREFIX MINGW_BIN \"\${dll_file}\" is_mingw_dll)
+if(is_mingw_dll)
+file (INSTALL \"\${dll_file}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\")
+endif()
+endforeach ()
+            ")
+            endif ()
+            include(GetDependencies)
+            get_all_dependencies(${TARGET} alldeps NO_STATIC)
+            foreach (dep IN LISTS alldeps)
+                install(IMPORTED_RUNTIME_ARTIFACTS ${dep} RUNTIME OPTIONAL)
+            endforeach ()
+            include(QtIF)
+            install_qtif(${TARGET})
         endif ()
     endif ()
     if (UNIX AND NOT ANDROID AND NOT APPLE)
-        include(AppImage)
-        install_appimage(${TARGET})
+        #include(AppImage)
+        #install_appimage(${TARGET})
+        include(QtIF)
+        install_qtif(${TARGET})
     endif ()
 endfunction()
 

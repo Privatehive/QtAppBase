@@ -23,11 +23,11 @@ int main(int argc, char **argv) {
 		qmlEngine.loadRootItem("QtAppBaseTestApp/QtAppBaseTest/main.qml", false);
 	} else {
 		qmlEngine.setHotReload(false);
-		qmlEngine.loadRootItem("qrc:/qt/qml/QtAppBaseTest//QtAppBase/main.qml", false);
+		qmlEngine.loadRootItem("qrc:/qt/qml/QtAppBaseTest/QtAppBaseTest/main.qml", false);
 	}
 #else
 	qmlEngine.setHotReload(false);
-	qmlEngine.loadRootItem("qrc:/qt/qml/QtAppBaseTest//QtAppBase/main.qml", false);
+	qmlEngine.loadRootItem("qrc:/qt/qml/QtAppBaseTest/QtAppBaseTest/main.qml", false);
 #endif
 
 	return app.start();

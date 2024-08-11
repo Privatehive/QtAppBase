@@ -7,6 +7,7 @@
 #include <QMessageAuthenticationCode>
 #include <QSettings>
 #include <QUuid>
+#include <memory>
 
 
 Q_LOGGING_CATEGORY(secretsmanager, "secretsmanager")
@@ -14,6 +15,16 @@ Q_LOGGING_CATEGORY(secretsmanager, "secretsmanager")
 #define SECRETS_SETTINGS_GROUP "_secrets_"
 #define SECRETSMANAGER_SETTINGS_GROUP "_secretsmanager_"
 
+
+void SecretsManager::setFallbackSettings(std::unique_ptr<QSettings> settings) {
+
+	fallbackSettings = std::move(settings);
+}
+
+void SecretsManager::setNamespace(const QString &ns) {
+
+	overwriteNamespace = ns;
+}
 
 void SecretsManager::writeSecret(const QString &alias, const QString &value, std::function<void()> callback,
                                  QObject *watcher /*= nullptr*/) {
@@ -196,25 +207,40 @@ QByteArray SecretsManager::getMachineId() {
 	return code.result();
 }
 
+std::unique_ptr<QSettings> SecretsManager::fallbackSettings = std::unique_ptr<QSettings>(nullptr);
+
+QString SecretsManager::overwriteNamespace = {};
+
+QSettings *SecretsManager::getFallbackSettings() {
+
+	if(!fallbackSettings) {
+		fallbackSettings = std::make_unique<QSettings>();
+	}
+	return fallbackSettings.get();
+}
+
 void SecretsManager::fallbackWriteSecret(const QString &alias, const QString &value) {
 
 	const auto hashVal = qHash(value);
 	const auto hash = QByteArray(sizeof(size_t), 0);
 	memcpy((void *)hash.data(), &hashVal, sizeof(size_t));
 	auto valueWithHash = value + QString::fromLatin1(hash);
-	QSettings settings;
-	settings.beginGroup(SECRETS_SETTINGS_GROUP);
-	settings.setValue(alias, QString::fromLatin1(SecretsManager::otp(SecretsManager::getUniqueId(), valueWithHash.toUtf8()).toBase64()));
-	settings.endGroup();
-	settings.sync();
+	const auto settings = getFallbackSettings();
+	settings->sync();
+	settings->beginGroup(SECRETS_SETTINGS_GROUP);
+	settings->setValue(alias, QString::fromLatin1(SecretsManager::otp(SecretsManager::getUniqueId(), valueWithHash.toUtf8()).toBase64()));
+	settings->endGroup();
+	settings->sync();
 }
 
 QString SecretsManager::fallbackReadSecret(const QString &alias) {
 
-	QSettings settings;
-	settings.beginGroup(SECRETS_SETTINGS_GROUP);
+	const auto settings = getFallbackSettings();
+	settings->sync();
+	settings->beginGroup(SECRETS_SETTINGS_GROUP);
 	auto secret = QString::fromUtf8(
-	 SecretsManager::otp(SecretsManager::getUniqueId(), QByteArray::fromBase64(settings.value(alias).toString().toLatin1())));
+	 SecretsManager::otp(SecretsManager::getUniqueId(), QByteArray::fromBase64(settings->value(alias).toString().toLatin1())));
+	settings->endGroup();
 	auto extractedSecret = QString();
 	auto extractedSecretSize = secret.length() - sizeof(size_t);
 	if(extractedSecretSize < secret.length() && extractedSecretSize >= 0) {
@@ -237,11 +263,12 @@ QString SecretsManager::fallbackReadSecret(const QString &alias) {
 
 void SecretsManager::fallbackDeleteSecret(const QString &alias) {
 
-	QSettings settings;
-	settings.beginGroup(SECRETS_SETTINGS_GROUP);
-	settings.remove(alias);
-	settings.endGroup();
-	settings.sync();
+	const auto settings = getFallbackSettings();
+	settings->sync();
+	settings->beginGroup(SECRETS_SETTINGS_GROUP);
+	settings->remove(alias);
+	settings->endGroup();
+	settings->sync();
 }
 
 QByteArray SecretsManager::otp(QByteArray key, QByteArray secret) {
@@ -259,26 +286,31 @@ QByteArray SecretsManager::otp(QByteArray key, QByteArray secret) {
 
 QByteArray SecretsManager::getCreateSettingsIdEntry(const QString &settingsKey) {
 
-	QSettings settings;
-	settings.beginGroup(SECRETSMANAGER_SETTINGS_GROUP);
-	if(!settings.value(settingsKey).isValid()) {
-		settings.setValue(settingsKey, QString::fromLatin1(QUuid::createUuid().toRfc4122().toBase64()));
+	const auto settings = getFallbackSettings();
+	settings->sync();
+	settings->beginGroup(SECRETSMANAGER_SETTINGS_GROUP);
+	if(!settings->value(settingsKey).isValid()) {
+		settings->setValue(settingsKey, QString::fromLatin1(QUuid::createUuid().toRfc4122().toBase64()));
 	}
-	auto id = QByteArray::fromBase64(settings.value(settingsKey).toString().toLatin1());
-	settings.endGroup();
-	settings.sync();
+	auto id = QByteArray::fromBase64(settings->value(settingsKey).toString().toLatin1());
+	settings->endGroup();
+	settings->sync();
 	return id;
 }
 
 QString SecretsManager::getNamespace() {
 
-	auto org = QCoreApplication::organizationDomain();
-	if(org.isEmpty()) {
-		org = "unknown";
+	if(!overwriteNamespace.isEmpty()) {
+		return overwriteNamespace;
+	} else {
+		auto org = QCoreApplication::organizationDomain();
+		if(org.isEmpty()) {
+			org = "unknown";
+		}
+		auto app = QCoreApplication::applicationName();
+		if(app.isEmpty()) {
+			app = "unknown";
+		}
+		return QString("%1.%2").arg(org, app);
 	}
-	auto app = QCoreApplication::applicationName();
-	if(app.isEmpty()) {
-		app = "unknown";
-	}
-	return QString("%1.%2").arg(org, app);
 }

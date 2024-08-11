@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>@info.projectName@</DisplayName>
+    <Description>@info.projectDescription@</Description>
+    <Version>@info.versionString@</Version>
+    <ReleaseDate>@TODAY@</ReleaseDate>
+    <Licenses>
+        <License name="@info.license@" file="LICENSE" />
+    </Licenses>
+    <Default>true</Default>
+    <ForcedInstallation>true</ForcedInstallation>
+    <ForcedUpdate>true</ForcedUpdate>
+</Package>

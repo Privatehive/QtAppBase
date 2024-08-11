@@ -48,9 +48,6 @@ void AdvancedQmlApplicationEngine::setHotReload(bool enable) {
 // If "useQuickView==false" you have to use ApplicationWindow as you root qml object.
 void AdvancedQmlApplicationEngine::loadRootItem(const QString &rootItem, bool useQuickView /*= true*/) {
 
-#ifdef Q_OS_ANDROID
-	addImportPath("qrc:/qt/qml"); // Workaround for Bug https://bugreports.qt.io/browse/QTBUG-120445
-#endif
 	qInfo(qmlengine) << "loading qml root item";
 	qInfo(qmlengine) << "qml import paths:" << importPathList();
 	qInfo(qmlengine) << "qml plugin paths:" << pluginPathList();
@@ -61,15 +58,20 @@ void AdvancedQmlApplicationEngine::loadRootItem(const QString &rootItem, bool us
 	}
 	qInfo(qmlengine) << "icon search path" << QIcon::themeSearchPaths();
 
-	if(rootItem.startsWith("qrc:"))
+	if(rootItem.startsWith("qrc:")) {
 		loadRootItem(QUrl(rootItem), useQuickView);
-	else
+	} else {
 		loadRootItem(QUrl::fromLocalFile(rootItem), useQuickView);
+	}
 }
 
 void AdvancedQmlApplicationEngine::loadRootItem(const QUrl &rootItem, bool useQuickView) {
 
 	mRootUrl = rootItem;
+
+	if(rootItem.scheme().toLower().startsWith("qrc")) {
+		addImportPath("qrc:/qt/qml"); // Workaround for Bug https://bugreports.qt.io/browse/QTBUG-120445
+	}
 
 	if(useQuickView) {
 		// QWindow window;

@@ -2,11 +2,18 @@
 #include "QtApplicationBaseExport.h"
 #include "info.h"
 #include <QByteArray>
+#include <QSettings>
 #include <QString>
+
 
 class QTAPPBASE_EXPORT SecretsManager {
 
  public:
+	// If there is no os secretstore support the secret will be written obfuscated into this settings file (defaults to new QSettings())
+	static void setFallbackSettings(std::unique_ptr<QSettings> settings);
+	// You may want to overwrite the default namespace (<organizationDomain>.<applicationName>) where the secrets will be
+	// stored in the secretstore
+	static void setNamespace(const QString &ns);
 	// Write a secret asynchronous
 	static void writeSecret(const QString &alias, const QString &value, std::function<void()> callback, QObject *watcher = nullptr);
 	// Read a secret asynchronous
@@ -37,6 +44,9 @@ class QTAPPBASE_EXPORT SecretsManager {
 	}
 
  private:
+	static std::unique_ptr<QSettings> fallbackSettings;
+	static QString overwriteNamespace;
+	static QSettings *getFallbackSettings();
 	static void fallbackWriteSecret(const QString &alias, const QString &value);
 	static QString fallbackReadSecret(const QString &alias);
 	static void fallbackDeleteSecret(const QString &alias);

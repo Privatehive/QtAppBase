@@ -1,13 +1,13 @@
 #pragma once
-#include "QtApplicationBaseExport.h"
+#include "QtApplicationBaseQmlExport.h"
 #include <QObject>
 #include <QtQmlIntegration>
 
 
-class QTAPPBASE_EXPORT Secret : public QObject {
+class QTAPPBASEQML_EXPORT Secret : public QObject {
 
 	Q_OBJECT
-	QML_ELEMENT
+	QML_NAMED_ELEMENT(Secret)
 	Q_PROPERTY(QString alias READ getAlias WRITE setAlias NOTIFY aliasChanged)
 	Q_PROPERTY(QString value READ getValue WRITE setValue NOTIFY valueChanged)
 
@@ -28,6 +28,7 @@ class QTAPPBASE_EXPORT Secret : public QObject {
 
  private:
 	Q_DISABLE_COPY(Secret);
+
 	QString mAlias;
 	QString mSecretValue;
 };
