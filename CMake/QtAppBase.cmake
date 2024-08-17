@@ -17,6 +17,16 @@ macro(parse_info INFO_FILE)
         set(info.versionString "${info.version.major}.${info.version.minor}.${info.version.patch}")
     endif ()
 
+    set(info.topics_list "")
+    foreach (var ${info.topics})
+        list(APPEND info.topics_list "${info.topics_${var}}")
+    endforeach()
+
+    set(info.categories_list "")
+    foreach (var ${info.categories})
+        list(APPEND info.categories_list "${info.categories_${var}}")
+    endforeach()
+
     list(APPEND info info.package info.packagejni info.versionString info.projectNameLowerCase)
 endmacro()
 
@@ -47,6 +57,7 @@ macro(qt_app_project_setup PROJECT_SETUP_INFO_VAR)
   \"copyrightYear\": \"${current_year}\",
   \"repository\": \"-\",
   \"topics\": [],
+  \"categories\": [],
   \"homepage\": \"-\",
   \"license\": \"-\"
 }")
@@ -449,8 +460,8 @@ endforeach ()
         endif ()
     endif ()
     if (UNIX AND NOT ANDROID AND NOT APPLE)
-        #include(AppImage)
-        #install_appimage(${TARGET})
+        include(AppImage)
+        install_appimage(${TARGET})
         include(QtIF)
         install_qtif(${TARGET})
     endif ()

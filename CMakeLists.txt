@@ -19,11 +19,11 @@ install(
         "${CMAKE_SOURCE_DIR}/CMake/QtAppBaseCommon.cmake"
         "${CMAKE_SOURCE_DIR}/CMake/MaterialIcons.cmake"
         "${CMAKE_SOURCE_DIR}/CMake/AppImage.cmake"
+        "${CMAKE_SOURCE_DIR}/CMake/AppImage.desktop.in"
         "${CMAKE_SOURCE_DIR}/CMake/QtIF.cmake"
         "${CMAKE_SOURCE_DIR}/CMake/QtIF.config.in"
         "${CMAKE_SOURCE_DIR}/CMake/QtIF.package.in"
         "${CMAKE_SOURCE_DIR}/CMake/GetDependencies.cmake"
-        "${CMAKE_SOURCE_DIR}/CMake/QtAppBase.desktop.in"
         "${CMAKE_SOURCE_DIR}/CMake/AndroidManifest.xml.in"
         DESTINATION
         "${CMAKE_INSTALL_LIBDIR}/cmake"

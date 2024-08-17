@@ -63,8 +63,10 @@ function(install_appimage TARGET)
 	set(APPIMAGE_RUNTIME "${PROJECT_BINARY_DIR}/runtime-${real_CMAKE_SYSTEM_PROCESSOR}")
 	download("${APPIMAGE_RUNTIME_URL}" "${APPIMAGE_RUNTIME}")
 
-	install(CODE "
+	# https://specifications.freedesktop.org/desktop-entry-spec/latest/recognized-keys.html
+	# categories: https://specifications.freedesktop.org/menu-spec/latest/category-registry.html
 
+	install(CODE "
 					file(REMOVE_RECURSE \"${CMAKE_INSTALL_PREFIX}/AppDir\")
 					file(COPY \"${CMAKE_INSTALL_PREFIX}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/AppDir\" PATTERN \"AppDir\" EXCLUDE)
 
@@ -79,26 +81,31 @@ function(install_appimage TARGET)
 					\"${CMAKE_INSTALL_PREFIX}/AppDir/usr/share/icons\")
 
 					set(AppName \"\$<TARGET_FILE_BASE_NAME:${TARGET}>\")
-					set(AppExec \"\$<TARGET_FILE_NAME:${TARGET}>\")
-					set(AppIcon \"\$<TARGET_FILE_BASE_NAME:${TARGET}>\")
-					configure_file(\"${current_dir}/QtAppBase.desktop.in\" \"${CMAKE_INSTALL_PREFIX}/AppDir/usr/share/applications/\$<TARGET_FILE_BASE_NAME:${TARGET}>.desktop\" @ONLY)
+                    set(AppExec \"\$<TARGET_FILE_NAME:${TARGET}>\")
+                    set(AppExecDir \"${CMAKE_INSTALL_BINDIR}\")
+
+					# Make info.json available
+					set(CMAKE_MODULE_PATH \"${CMAKE_MODULE_PATH}\")
+                    include(QtAppBase)
+                    parse_info(\"${PROJECT_SOURCE_DIR}/info.json\")
+					string(TIMESTAMP TODAY \"%Y-%m-%d\")
+					set(at @)
+					set(OutName \"${info.projectName}-${info.versionString}-${CMAKE_SYSTEM_PROCESSOR}\")
+
+					configure_file(\"${current_dir}/AppImage.desktop.in\" \"${CMAKE_INSTALL_PREFIX}/AppDir/usr/share/applications/\${AppName}.desktop\" @ONLY)
 
 					# Default AppImage icon
-					file(DOWNLOAD \"https://upload.wikimedia.org/wikipedia/commons/0/00/Cross-image.svg\" \"${CMAKE_INSTALL_PREFIX}/AppDir/\${AppIcon}.svg\")
+					file(DOWNLOAD \"https://upload.wikimedia.org/wikipedia/commons/0/00/Cross-image.svg\" \"${CMAKE_INSTALL_PREFIX}/AppDir/\${AppName}.svg\")
 
 					# DejaVu font
 					file(DOWNLOAD \"http://sourceforge.net/projects/dejavu/files/dejavu/2.37/dejavu-sans-ttf-2.37.zip\" \"${PROJECT_BINARY_DIR}/dejavu-sans-ttf-2.37.zip\")
 					execute_process(COMMAND ${CMAKE_COMMAND} -E tar xf \"${PROJECT_BINARY_DIR}/dejavu-sans-ttf-2.37.zip\" WORKING_DIRECTORY \"${PROJECT_BINARY_DIR}\")
 					execute_process(COMMAND ${CMAKE_COMMAND} -E copy \"${PROJECT_BINARY_DIR}/dejavu-sans-ttf-2.37/ttf/DejaVuSans.ttf\" \"${CMAKE_INSTALL_PREFIX}/AppDir/usr/lib/fonts\")
 
-					execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink \"usr/bin/\$<TARGET_FILE_NAME:${TARGET}>\" \"AppRun\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}/AppDir\")
-					execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink \"usr/share/applications/\$<TARGET_FILE_BASE_NAME:${TARGET}>.desktop\" \"\$<TARGET_FILE_BASE_NAME:${TARGET}>.desktop\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}/AppDir\")
+					execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink \"usr/bin/\${AppExec}\" \"AppRun\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}/AppDir\")
+					execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink \"usr/share/applications/\${AppName}.desktop\" \"\${AppName}.desktop\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}/AppDir\")
 
-					execute_process(COMMAND ${APPIMAGE_TOOL} --no-appstream --runtime-file \"${APPIMAGE_RUNTIME}\" ./AppDir WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\")
-
-					if(\"${SYSTEM_ARCH}\" STREQUAL \"armv6\")
-						execute_process(COMMAND ${CMAKE_COMMAND} -E rename \"\$<TARGET_FILE_BASE_NAME:${TARGET}>-armhf.AppImage\" \"\$<TARGET_FILE_BASE_NAME:${TARGET}>-armv6.AppImage\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\")
-					endif()
+					execute_process(COMMAND ${APPIMAGE_TOOL} --no-appstream --runtime-file \"${APPIMAGE_RUNTIME}\" ./AppDir \${OutName}.AppImage WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\")
 ")
 
 endfunction()

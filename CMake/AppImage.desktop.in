@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=@info.projectName@
+Exec=@AppExec@
+Icon=@info.projectName@
+Type=Application
+Comment=@info.projectDescription@
+Categories=@info.categories_list@
+Keywords=@info.topics_list@
+Terminal=false
+StartupNotify=true
+NoDisplay=false

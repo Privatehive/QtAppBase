@@ -1,9 +1,0 @@
-[Desktop Entry]
-Name=@AppName@
-Exec=@AppExec@
-Icon=@AppIcon@
-Type=Application
-Categories=Utility;
-Terminal=false
-StartupNotify=true
-NoDisplay=false
