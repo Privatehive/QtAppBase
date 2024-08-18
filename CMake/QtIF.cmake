@@ -2,6 +2,9 @@ set(current_dir ${CMAKE_CURRENT_LIST_DIR})
 
 function(install_qtif TARGET)
 
+    find_program(ARCHIVEGEN_TOOL NAMES "archivegen")
+    find_program(BINARYCREATOR_TOOL NAMES "binarycreator")
+
     install(CODE "
 					file(REMOVE_RECURSE \"${CMAKE_INSTALL_PREFIX}/QtIF\")
 
@@ -30,15 +33,15 @@ function(install_qtif TARGET)
 					configure_file(\"${current_dir}/QtIF.package.in\" \"${CMAKE_INSTALL_PREFIX}/QtIF/packages/${info.package}/meta/package.xml\" @ONLY)
 
                     if(EXISTS \"${CMAKE_INSTALL_FULL_BINDIR}\")
-                        execute_process(COMMAND archivegen${CMAKE_EXECUTABLE_SUFFIX} -f 7z -c 5 \"QtIF/packages/${info.package}/data/${CMAKE_INSTALL_BINDIR}\" \"${CMAKE_INSTALL_BINDIR}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\")
+                        execute_process(COMMAND ${ARCHIVEGEN_TOOL} -f 7z -c 5 \"QtIF/packages/${info.package}/data/${CMAKE_INSTALL_BINDIR}\" \"${CMAKE_INSTALL_BINDIR}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
                     endif()
                     if(EXISTS \"${CMAKE_INSTALL_FULL_LIBDIR}\")
-                        execute_process(COMMAND archivegen${CMAKE_EXECUTABLE_SUFFIX} -f 7z -c 5 \"QtIF/packages/${info.package}/data/${CMAKE_INSTALL_LIBDIR}\" \"${CMAKE_INSTALL_LIBDIR}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\")
+                        execute_process(COMMAND ${ARCHIVEGEN_TOOL} -f 7z -c 5 \"QtIF/packages/${info.package}/data/${CMAKE_INSTALL_LIBDIR}\" \"${CMAKE_INSTALL_LIBDIR}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
                     endif()
                     if(EXISTS \"${CMAKE_INSTALL_FULL_INCLUDEDIR}\")
-                        execute_process(COMMAND archivegen${CMAKE_EXECUTABLE_SUFFIX} -f 7z -c 5 \"QtIF/packages/${info.package}/data/${CMAKE_INSTALL_INCLUDEDIR}\" \"${CMAKE_INSTALL_INCLUDEDIR}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\")
+                        execute_process(COMMAND ${ARCHIVEGEN_TOOL} -f 7z -c 5 \"QtIF/packages/${info.package}/data/${CMAKE_INSTALL_INCLUDEDIR}\" \"${CMAKE_INSTALL_INCLUDEDIR}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
                     endif()
-					execute_process(COMMAND binarycreator${CMAKE_EXECUTABLE_SUFFIX} -f -c QtIF/config/config.xml -p QtIF/packages \"\${OutName}-installer${CMAKE_EXECUTABLE_SUFFIX}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\")
+					execute_process(COMMAND ${BINARYCREATOR_TOOL} -f -c QtIF/config/config.xml -p QtIF/packages \"\${OutName}-installer${CMAKE_EXECUTABLE_SUFFIX}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
 ")
 
 endfunction()

@@ -9,6 +9,7 @@ from conan.tools.env import VirtualBuildEnv
 
 required_conan_version = ">=2.0"
 
+
 class QtAppBaseConan(ConanFile):
     jsonInfo = json.load(open("info.json", 'r'))
     # ---Package reference---
@@ -53,16 +54,20 @@ class QtAppBaseConan(ConanFile):
             self.requires("qtkeychain/0.14.3@%s/stable" % self.user)
 
     def build_requirements(self):
+        if self.settings.os == "Linux":
+            self.tool_requires("appimagetool/continuous@%s/stable" % self.user, visible=True)
         if self.settings.os == "Windows" or self.settings.os == "Linux":
             self.tool_requires("qtinstaller/4.8.0@%s/stable" % self.user, visible=True)
 
     def validate(self):
         valid_os = ["Windows", "Linux", "Android"]
         if str(self.settings.os) not in valid_os:
-            raise ConanInvalidConfiguration(f"{self.name} {self.version} is only supported for the following operating systems: {valid_os}")
+            raise ConanInvalidConfiguration(
+                f"{self.name} {self.version} is only supported for the following operating systems: {valid_os}")
         valid_arch = ["x86_64", "x86", "armv7", "armv8"]
         if str(self.settings.arch) not in valid_arch:
-            raise ConanInvalidConfiguration(f"{self.name} {self.version} is only supported for the following architectures on {self.settings.os}: {valid_arch}")
+            raise ConanInvalidConfiguration(
+                f"{self.name} {self.version} is only supported for the following architectures on {self.settings.os}: {valid_arch}")
         if not self.dependencies["qt"].options.qtbase:
             raise ConanInvalidConfiguration("qt qtbase options is required")
         if self.options.qml:
@@ -71,7 +76,7 @@ class QtAppBaseConan(ConanFile):
             if not self.dependencies["qt"].options.qtdeclarative:
                 raise ConanInvalidConfiguration("qt qtdeclarative options is required")
             if self.dependencies["qt"].options.opengl == "no":
-                raise ConanInvalidConfiguration("qt opengl options must contain a value != no") 
+                raise ConanInvalidConfiguration("qt opengl options must contain a value != no")
 
     def configure(self):
         if self.options.secretsManager:
