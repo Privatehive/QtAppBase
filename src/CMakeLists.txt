@@ -86,7 +86,7 @@ install_qt_library(QtAppBase)
 if (FEATURE_TEST_APP AND FEATURE_QML)
 
     find_package(Qt6 REQUIRED COMPONENTS Gui QuickControls2)
-    qt_add_executable(QtAppBaseTestApp mainQml.cpp)
+    qt_add_executable(QtAppBaseTestApp WIN32 mainQml.cpp)
     target_link_libraries(QtAppBaseTestApp PRIVATE QtAppBase PRIVATE QtAppBaseQml PRIVATE Qt6::Quick PRIVATE Qt6::QuickControls2 PRIVATE Qt6::Qml PRIVATE Qt6::Gui)
 
     qt_add_qml_module(QtAppBaseTestApp
@@ -98,6 +98,7 @@ if (FEATURE_TEST_APP AND FEATURE_QML)
     )
 
     register_icon(QtAppBaseTestApp
+            ICO "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase.ico"
             512x512 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase512.png"
             256x256 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase256.png"
             128x128 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase128.png"

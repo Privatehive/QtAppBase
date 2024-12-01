@@ -1,3 +1,4 @@
+#include "@INCLUDE_FILE_NAME@"
 #define VS_FF_DEBUG 0x1L
 #define VS_VERSION_INFO 0x1L
 #define VS_FFI_FILEFLAGSMASK 0x17L
@@ -7,6 +8,7 @@
 #define VFT_APP 0x1L
 #define VFT_DLL 0x2L
 #define VFT2_UNKNOWN 0x0L
+#define IDI_ICON1 1
 
 #ifndef DEBUG
 #define VER_DEBUG                   0
@@ -28,12 +30,12 @@ BEGIN
         BEGIN
             // VALUE "Comments",           "\0" /* Additional information that should be displayed for diagnostic purposes. */
             VALUE "CompanyName",      "@info.vendor@\0" /* Company that produced the file—for example, "Microsoft Corporation" or "Standard Microsystems Corporation, Inc." This string is required. */
-            VALUE "FileDescription",  "@info.projectDescription@\0" /* File description to be presented to users. This string may be displayed in a list box when the user is choosing files to install—for example, "Keyboard Driver for AT-Style Keyboards". This string is required. */
+            VALUE "FileDescription",  "@info.projectName@\0" /* File description to be presented to users. This string may be displayed in a list box when the user is choosing files to install—for example, "Keyboard Driver for AT-Style Keyboards". This string is required. */
             VALUE "FileVersion",      "@info.versionString@\0" /* Version number of the file—for example, "3.10" or "5.00.RC2". This string is required. */
-            VALUE "InternalName",     "@AppName@\n" /* internal name of the file, if one exists—for example, a module name if the file is a dynamic-link library. If the file has no internal name, this string should be the original filename, without extension. This string is required. */
-            VALUE "LegalCopyright",   "@info.license@\n" /* Copyright notices that apply to the file. This should include the full text of all notices, legal symbols, copyright dates, and so on. This string is optional. */
+            VALUE "InternalName",     APP_EXEC_BASE /* internal name of the file, if one exists—for example, a module name if the file is a dynamic-link library. If the file has no internal name, this string should be the original filename, without extension. This string is required. */
+            VALUE "LegalCopyright",   "@info.license@\0" /* Copyright notices that apply to the file. This should include the full text of all notices, legal symbols, copyright dates, and so on. This string is optional. */
             // VALUE "LegalTrademarks",  "\0" /* Trademarks and registered trademarks that apply to the file. This should include the full text of all notices, legal symbols, trademark numbers, and so on. This string is optional. */
-            VALUE "OriginalFilename", "@AppExec@\0" /* Original name of the file, not including a path. This information enables an application to determine whether a file has been renamed by a user. The format of the name depends on the file system for which the file was created. This string is required. */
+            VALUE "OriginalFilename", APP_EXEC /* Original name of the file, not including a path. This information enables an application to determine whether a file has been renamed by a user. The format of the name depends on the file system for which the file was created. This string is required. */
             VALUE "ProductName",      "@info.projectName@\0"
             VALUE "ProductVersion",   "@info.versionString@\0"
         END
@@ -52,3 +54,5 @@ BEGIN
 
     END
 END
+
+@AppIcon@
