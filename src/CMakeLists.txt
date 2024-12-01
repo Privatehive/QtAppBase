@@ -60,6 +60,7 @@ if (FEATURE_SECRETS_MANAGER)
         target_include_directories(QtAppBase PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/android> $<INSTALL_INTERFACE:include>)
     endif ()
     if (FEATURE_QML)
+        message(STATUS "Enabled Secrets Manager QML integration")
         qt_add_qml_module(QtAppBaseQml
                 URI
                 QtAppBase
@@ -96,5 +97,14 @@ if (FEATURE_TEST_APP AND FEATURE_QML)
             QtAppBaseTest/main.qml
     )
 
+    register_icon(QtAppBaseTestApp
+            512x512 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase512.png"
+            256x256 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase256.png"
+            128x128 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase128.png"
+            64x64 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase64.png"
+            48x48 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase48.png"
+            32x32 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase32.png"
+    )
+    register_file_extension(QtAppBaseTestApp EXTENSION test MIME_TYPE application/x-qtappbase COMMENT "A test")
     install_app(QtAppBaseTestApp)
 endif ()

@@ -13,18 +13,16 @@
 template<class T>
 class QtApplicationBase : public T {
 
-public:
-	QtApplicationBase(int &argc, char **argv) :
-		T(argc, argv) {
+ public:
+	QtApplicationBase(int &argc, char **argv) : T(argc, argv) {
 #if defined(INFO_PROJECTNAME) && defined(INFO_VERSION_MAJOR) && defined(INFO_VERSION_MINOR) && defined(INFO_VERSION_PATCH) && \
-defined(INFO_DOMAIN)
+ defined(INFO_DOMAIN)
 		set(INFO_PROJECTNAME, QString("%1.%2.%3").arg(INFO_VERSION_MAJOR).arg(INFO_VERSION_MINOR).arg(INFO_VERSION_PATCH), INFO_DOMAIN);
 #endif
 		init();
 	}
 
-	QtApplicationBase(int &argc, char **argv, const QString &applicationName) :
-		T(argc, argv) {
+	QtApplicationBase(int &argc, char **argv, const QString &applicationName) : T(argc, argv) {
 
 #if defined(INFO_VERSION_MAJOR) && defined(INFO_VERSION_MINOR) && defined(INFO_VERSION_PATCH) && defined(INFO_DOMAIN)
 		set(applicationName, QString("%1.%2.%3").arg(INFO_VERSION_MAJOR).arg(INFO_VERSION_MINOR).arg(INFO_VERSION_PATCH), INFO_DOMAIN);
@@ -32,8 +30,7 @@ defined(INFO_DOMAIN)
 		init();
 	}
 
-	QtApplicationBase(int &argc, char **argv, const QString &applicationName, const QString &applicationVersion) :
-		T(argc, argv) {
+	QtApplicationBase(int &argc, char **argv, const QString &applicationName, const QString &applicationVersion) : T(argc, argv) {
 
 #if defined(INFO_DOMAIN)
 		set(applicationName, applicationVersion, INFO_DOMAIN);
@@ -43,11 +40,14 @@ defined(INFO_DOMAIN)
 
 	QtApplicationBase(int &argc, char **argv, const QString &applicationName, const QString &applicationVersion,
 	                  const QString &domainReversed) :
-		T(argc, argv) {
+	 T(argc, argv) {
 
 		set(applicationName, applicationVersion, domainReversed);
 		init();
 	}
+
+	// does not take ownership of parser
+	static void setCmdParser(QCommandLineParser *parser);
 
 	// Must only be called once
 	int start();
@@ -56,12 +56,19 @@ defined(INFO_DOMAIN)
 	QString getDataLocation();
 	QString getConfigLocation();
 
-private:
+ private slots:
+	void handleShutdown();
+
+ private:
 	void set(const QString &applicationName, const QString &applicationVersion, const QString &domainReversed);
 	void init();
+	static QCommandLineParser *parser;
 };
 
-// provide the domain in reverse notation com.github.tereius instead of tereius.github.com
+template<typename T>
+QCommandLineParser *QtApplicationBase<T>::parser = nullptr;
+
+// provide the domain in reverse notation e.g.: com.github.myapp instead of myapp.github.com
 template<class T>
 void QtApplicationBase<T>::set(const QString &applicationName, const QString &applicationVersion, const QString &domainReversed) {
 
@@ -105,20 +112,33 @@ QString QtApplicationBase<T>::getConfigLocation() {
 }
 
 template<class T>
+void QtApplicationBase<T>::setCmdParser(QCommandLineParser *parser) {
+
+	QtApplicationBase<T>::parser = parser;
+}
+
+template<class T>
 int QtApplicationBase<T>::start() {
 
-	QCommandLineParser parser;
-	parser.addOption({"u", "Uninstall persistent data."});
-	parser.parse(QCoreApplication::arguments());
-
-	if(parser.isSet("u")) {
-		// Delete the persistence
-		QDir(getDataLocation()).removeRecursively();
-		QDir(getConfigLocation()).removeRecursively();
-		QDir(getCacheLocation()).removeRecursively();
-		return 0;
+	if(parser) {
+		auto exit = false;
+		if(parser->isSet("remove-data-dir")) {
+			if(QDir(getDataLocation()).removeRecursively()) qInfo() << "removed data dir:" << getDataLocation();
+			exit = true;
+		}
+		if(parser->isSet("remove-cache-dir")) {
+			if(QDir(getCacheLocation()).removeRecursively()) qInfo() << "removed cache dir:" << getCacheLocation();
+			exit = true;
+		}
+		if(parser->isSet("remove-config-dir")) {
+			if(QDir(getConfigLocation()).removeRecursively()) qInfo() << "removed config dir:" << getConfigLocation();
+			exit = true;
+		}
+		if(exit) {
+			handleShutdown();
+			return 0;
+		}
 	}
-
 	return T::exec();
 }
 
@@ -133,7 +153,25 @@ void QtApplicationBase<T>::init() {
 	           "QCoreApplication::applicationVersion must not be empty - set it or provide the compile definitions: INFO_VERSION_MAJOR, "
 	           "INFO_VERSION_MINOR, INFO_VERSION_PATCH");
 
-#if(QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+	if(!parser) {
+		parser = new QCommandLineParser();
+	}
+
+	parser->setApplicationDescription(INFO_PROJECTDESCRIPTION);
+	parser->addHelpOption();
+	parser->addVersionOption();
+	parser->addOption(
+	 {"remove-cache-dir",
+	  QObject::tr("Removes the cache dir: \"%1\". Is used by uninstaller and should not be used by end user.").arg(getCacheLocation())});
+	parser->addOption(
+	 {"remove-config-dir",
+	  QObject::tr("Removes the config dir: \"%1\". Is used by uninstaller and should not be used by end user.").arg(getConfigLocation())});
+	parser->addOption(
+	 {"remove-data-dir",
+	  QObject::tr("Removes the data dir: \"%1\". Is used by uninstaller and should not be used by end user.").arg(getDataLocation())});
+	parser->process(*QCoreApplication::instance());
+
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
 	QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 	QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
@@ -161,21 +199,30 @@ void QtApplicationBase<T>::init() {
 	LogMessageHandler::prepare(getDataLocation());
 
 	qInfo().noquote() << QString("Starting app \"%1\" v%2 ID %4 PID %3")
-	                     .arg(QCoreApplication::applicationName(), QCoreApplication::applicationVersion(),
-	                          QString::number(QCoreApplication::applicationPid())).arg(INFO_PROJECTID);
+	                      .arg(QCoreApplication::applicationName(), QCoreApplication::applicationVersion(),
+	                           QString::number(QCoreApplication::applicationPid()))
+	                      .arg(INFO_PROJECTID);
 	qInfo() << "Qt" << qPrintable(QLibraryInfo::version().toString().prepend("v")) << "dbg:" << QLibraryInfo::isDebugBuild()
-		<< "prefix path:" << QLibraryInfo::path(QLibraryInfo::PrefixPath);
+	        << "prefix path:" << QLibraryInfo::path(QLibraryInfo::PrefixPath);
 	qInfo() << "cwd:" << QDir::currentPath();
 	qInfo() << "data location:" << getDataLocation();
 	qInfo() << "config location:" << getConfigLocation();
 	qInfo() << "cache location:" << getCacheLocation();
 
-	QObject::connect(qApp, &QCoreApplication::aboutToQuit, qApp, []() {
-		qInfo() << "Stopping app with PID" << QCoreApplication::applicationPid();
-		QSettings settings;
-		settings.beginGroup("_informational_");
-		settings.setValue("pid", {});
-		settings.endGroup();
-		settings.sync();
-	});
+	QObject::connect(qApp, &QCoreApplication::aboutToQuit, this, &QtApplicationBase<T>::handleShutdown);
+}
+
+template<class T>
+void QtApplicationBase<T>::handleShutdown() {
+
+	qInfo().noquote() << QString("Gracefully shutting down app \"%1\" v%2 ID %4 PID %3")
+	                      .arg(QCoreApplication::applicationName(), QCoreApplication::applicationVersion(),
+	                           QString::number(QCoreApplication::applicationPid()))
+	                      .arg(INFO_PROJECTID);
+
+	QSettings settings;
+	settings.beginGroup("_informational_");
+	settings.setValue("pid", {});
+	settings.endGroup();
+	settings.sync();
 }

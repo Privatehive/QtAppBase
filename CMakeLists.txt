@@ -24,13 +24,12 @@ install(
         "${CMAKE_SOURCE_DIR}/CMake/QtIF.config.in"
         "${CMAKE_SOURCE_DIR}/CMake/QtIF.package.in"
         "${CMAKE_SOURCE_DIR}/CMake/GetDependencies.cmake"
+        "${CMAKE_SOURCE_DIR}/CMake/AndroidDeploy.cmake"
         "${CMAKE_SOURCE_DIR}/CMake/AndroidManifest.xml.in"
+        "${CMAKE_SOURCE_DIR}/CMake/mimeMap.xml.in"
+        "${CMAKE_SOURCE_DIR}/CMake/PKGBUILD.cmake"
+        "${CMAKE_SOURCE_DIR}/CMake/PKGBUILD.in"
+        "${CMAKE_SOURCE_DIR}/CMake/win32resource.rc.in"
         DESTINATION
         "${CMAKE_INSTALL_LIBDIR}/cmake"
 )
-
-install(CODE "
-set(CMAKE_MODULE_PATH \"${CMAKE_SOURCE_DIR}/CMake\" \"${CMAKE_MODULE_PATH}\")
-include(QtAppBaseCommon)
-replace_in_file(\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/cmake/QtAppBase.cmake\" MATCH \"if(FEATURE_QML)\" REPLACE \"if(${FEATURE_QML})\")
-")

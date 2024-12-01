@@ -1,0 +1,11 @@
+pkgname='@AppName@'
+pkgver=1.0.0
+pkgrel=1
+pkgdesc='@info.projectDescription@'
+arch=("@AppArch@")
+license=("@info.license@")
+source=(pkg.tar.gz)
+
+package() {
+    cp -r ${srcdir}/makepkg ${pkgdir}
+}

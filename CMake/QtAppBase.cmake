@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.21.1)
 set(current_dir ${CMAKE_CURRENT_LIST_DIR})
 
+macro(register_target_properties)
+    define_property(TARGET PROPERTY APPBASE_QTIF_SOURCE_DIR BRIEF_DOCS "Qt Installer related files" FULL_DOCS "Qt Installer related files")
+    define_property(TARGET PROPERTY APPBASE_ASSOCIATED_EXTENSIONS BRIEF_DOCS "Qt Installer related files" FULL_DOCS "Qt Installer related files")
+    define_property(TARGET PROPERTY APPBASE_ICON BRIEF_DOCS "Qt Installer related files" FULL_DOCS "Qt Installer related files")
+endmacro()
+
 macro(parse_info INFO_FILE)
 
     include(JSONParser)
@@ -33,14 +39,14 @@ endmacro()
 macro(qt_app_project_setup PROJECT_SETUP_INFO_VAR)
 
     if (NOT EXISTS "${PROJECT_SOURCE_DIR}/LICENSE")
-        message(NOTICE "Missing LICENSE file in project folder. Creating a placeholder.")
+        message(NOTICE "QtAppBase: Missing LICENSE file in project folder. Creating a placeholder.")
         file(WRITE "${PROJECT_SOURCE_DIR}/LICENSE" "TODO")
     endif ()
 
     if (NOT EXISTS "${PROJECT_SOURCE_DIR}/info.json")
-        message(NOTICE "Missing info.json file in project folder. Creating a generic one.")
-        string(TIMESTAMP current_year %Y)
-        string(TIMESTAMP timestamp_id %s UTC)
+        message(NOTICE "QtAppBase: Missing info.json file in project folder. Creating a generic one.")
+        string(TIMESTAMP CURRENT_YEAR %Y)
+        string(TIMESTAMP TIMESTAMP_ID %s UTC)
         file(WRITE "${PROJECT_SOURCE_DIR}/info.json" "{
   \"version\": {
     \"major\": 1,
@@ -50,11 +56,11 @@ macro(qt_app_project_setup PROJECT_SETUP_INFO_VAR)
   },
   \"projectName\": \"GenericProject\",
   \"projectDescription\": \"-\",
-  \"projectId\": \"${timestamp_id}\",
+  \"projectId\": \"${TIMESTAMP_ID}\",
   \"vendor\": \"-\",
   \"contact\": \"-\",
   \"domain\": \"-\",
-  \"copyrightYear\": \"${current_year}\",
+  \"copyrightYear\": \"${CURRENT_YEAR}\",
   \"repository\": \"-\",
   \"topics\": [],
   \"categories\": [],
@@ -76,7 +82,7 @@ macro(qt_app_setup)
 
     # Configure a header file to pass some of the CMake settings to the source code.
     include_directories("${PROJECT_BINARY_DIR}/.qtappbase")
-    file(WRITE "${PROJECT_BINARY_DIR}/.qtappbase/info.h" "")
+    file(WRITE "${PROJECT_BINARY_DIR}/.qtappbase/info.h" "#pragma once\n")
     foreach (var ${info})
         string(TOUPPER "${var}" UPPER_VAR)
         string(REPLACE "." "_" UPPER_VAR "${UPPER_VAR}")
@@ -94,25 +100,29 @@ macro(qt_app_setup)
         set(QT_ENABLE_VERBOSE_DEPLOYMENT OFF) # If ON leads to sign error
         #set(QT_NO_GLOBAL_APK_TARGET_PART_OF_ALL ON)
         if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-            message(STATUS "Configuring release/signed APK, AAB")
+            message(STATUS "QtAppBase: Configuring release/signed APK, AAB")
             set(QT_ANDROID_DEPLOY_RELEASE ON)
             set(QT_ANDROID_SIGN_APK ON)
             set(QT_ANDROID_SIGN_AAB ON)
         else ()
-            message(STATUS "Configuring debug/debug-signed APK, AAB")
+            message(STATUS "QtAppBase: Configuring debug/debug-signed APK, AAB")
             set(QT_ANDROID_DEPLOY_RELEASE OFF)
             set(QT_ANDROID_SIGN_APK OFF)
             set(QT_ANDROID_SIGN_AAB OFF)
         endif ()
         #message(STATUS "Run target 'apk' to build APK")
-        message(STATUS "Run target 'aab' to build AAB")
+        message(STATUS "QtAppBase: Run target 'aab' to build AAB")
     endif ()
 
-    find_package(Qt6 REQUIRED Core)
-    find_package(Qt6 COMPONENTS Qml)
+    find_package(Qt6 REQUIRED REQUIRED Core)
+    find_package(Qt6 OPTIONAL_COMPONENTS Qml)
+
     if (Qt6Qml_DIR)
         if (QT_KNOWN_POLICY_QTP0001)
             qt_policy(SET QTP0001 NEW)
+        endif ()
+        if (QT_KNOWN_POLICY_QTP0004)
+            qt_policy(SET QTP0004 NEW)
         endif ()
     endif ()
     if (QT_KNOWN_POLICY_QTP0002)
@@ -126,6 +136,8 @@ macro(qt_app_setup)
 
     file(COPY "${PROJECT_SOURCE_DIR}/LICENSE" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
     install(FILES "${PROJECT_SOURCE_DIR}/LICENSE" DESTINATION "${CMAKE_INSTALL_PREFIX}")
+
+    register_target_properties()
 
     cmake_language(DEFER CALL
             set (CPACK_PACKAGE_NAME "${info.projectName}")
@@ -156,7 +168,6 @@ function(target_mark_public_header TARGET)
     else ()
         set_target_properties(${TARGET} PROPERTIES PUBLIC_HEADER "${ARGN}")
     endif ()
-    get_target_property(CURRENT_PUBLIC_HEADERsssd ${TARGET} PUBLIC_HEADER)
 endfunction()
 
 function(add_dependency TARGET)
@@ -173,7 +184,7 @@ function(_combine_with_resource_targets TARGET OUT)
     foreach (i RANGE 1 100)
         set(resource_target_name "${TARGET}_resources_${i}")
         if (TARGET ${resource_target_name})
-            message(STATUS "  found resource target ${resource_target_name}")
+            message(STATUS "QtAppBase:  found resource target ${resource_target_name}")
             list(APPEND install_targest "${resource_target_name}")
         endif ()
     endforeach ()
@@ -184,7 +195,7 @@ function(_combine_with_init_targets TARGET OUT)
     set(install_targest ${TARGET})
     set(init_target_name "${TARGET}_init")
     if (TARGET ${init_target_name})
-        message(STATUS "  found init target ${init_target_name}")
+        message(STATUS "QtAppBase:  found init target ${init_target_name}")
         list(APPEND install_targest "${init_target_name}")
     endif ()
     set(${OUT} ${install_targest} PARENT_SCOPE)
@@ -192,7 +203,7 @@ endfunction()
 
 function(install_qt_library TARGET)
 
-    message(STATUS "install_qt_library ${TARGET}")
+    message(STATUS "QtAppBase: Install Qt library ${TARGET}")
     set(staging_prefix ".")
     _combine_with_resource_targets(${TARGET} INSTALL_TARGETS)
     install(TARGETS ${INSTALL_TARGETS}
@@ -232,7 +243,7 @@ endfunction()
 # Qt can't install qml modules yet. We have to provide a solution.
 function(install_qml_module TARGET)
 
-    message(STATUS "install_qml_module ${TARGET}")
+    message(STATUS "QtAppBase: Install QML module ${TARGET}")
     qt_query_qml_module(${TARGET}
             URI module_uri
             VERSION module_version
@@ -334,128 +345,100 @@ function(install_qml_module TARGET)
     endif ()
 endfunction()
 
-function(gen_version_code VAR)
+# register_file_extension(target EXTENSION extension MIME_TYPE mime [COMMENT comment])
+function(register_file_extension TARGET)
 
-    set(ARG_VERSION_CODE "0")
+    set(options)
+    set(oneValueArgs EXTENSION MIME_TYPE COMMENT)
+    set(multiValueArgs)
+    cmake_parse_arguments(OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    if (DEFINED PROJECT_VERSION_MAJOR AND NOT PROJECT_VERSION_MAJOR STREQUAL "")
-        if (PROJECT_VERSION_MAJOR LESS "2100" AND PROJECT_VERSION_MAJOR GREATER "-1")
-            math(EXPR ARG_VERSION_CODE "${ARG_VERSION_CODE} + ${PROJECT_VERSION_MAJOR} * 1000000")
-        else ()
-            message(FATAL_ERROR "PROJECT_VERSION_MAJOR exceeding the allowed range of [0, 2099]")
-        endif ()
-    endif ()
-    if (DEFINED PROJECT_VERSION_MINOR AND NOT PROJECT_VERSION_MINOR STREQUAL "")
-        if (PROJECT_VERSION_MINOR LESS "100" AND PROJECT_VERSION_MINOR GREATER "-1")
-            math(EXPR ARG_VERSION_CODE "${ARG_VERSION_CODE} + ${PROJECT_VERSION_MINOR} * 10000")
-        else ()
-            message(FATAL_ERROR "PROJECT_VERSION_MINOR exceeding the allowed range of [0, 99]")
-        endif ()
-    endif ()
-    if (DEFINED PROJECT_VERSION_PATCH AND NOT PROJECT_VERSION_PATCH STREQUAL "")
-        if (PROJECT_VERSION_PATCH LESS "100" AND PROJECT_VERSION_PATCH GREATER "-1")
-            math(EXPR ARG_VERSION_CODE "${ARG_VERSION_CODE} + ${PROJECT_VERSION_PATCH} * 100")
-        else ()
-            message(FATAL_ERROR "PROJECT_VERSION_PATCH exceeding the allowed range of [0, 99]")
-        endif ()
-    endif ()
-    if (DEFINED PROJECT_VERSION_TWEAK AND NOT PROJECT_VERSION_TWEAK STREQUAL "")
-        if (PROJECT_VERSION_TWEAK LESS "10" AND PROJECT_VERSION_TWEAK GREATER "-1")
-            math(EXPR ARG_VERSION_CODE "${ARG_VERSION_CODE} + ${PROJECT_VERSION_TWEAK} * 10")
-        else ()
-            message(FATAL_ERROR "PROJECT_VERSION_TWEAK exceeding the allowed range of [0, 9]")
-        endif ()
-    endif ()
-    if (CMAKE_ANDROID_ARCH_ABI STREQUAL "arm64-v8a")
-        math(EXPR ARG_VERSION_CODE "${ARG_VERSION_CODE} + 1")
-    elseif (CMAKE_ANDROID_ARCH_ABI STREQUAL "armeabi-v7a" AND NOT CMAKE_ANDROID_ARM_NEON)
-        math(EXPR ARG_VERSION_CODE "${ARG_VERSION_CODE} + 2")
-    elseif (CMAKE_ANDROID_ARCH_ABI STREQUAL "armeabi-v7a" AND CMAKE_ANDROID_ARM_NEON)
-        math(EXPR ARG_VERSION_CODE "${ARG_VERSION_CODE} + 3")
-    elseif (CMAKE_ANDROID_ARCH_ABI STREQUAL "armeabi-v6")
-        math(EXPR ARG_VERSION_CODE "${ARG_VERSION_CODE} + 4")
-    elseif (CMAKE_ANDROID_ARCH_ABI STREQUAL "armeabi")
-        math(EXPR ARG_VERSION_CODE "${ARG_VERSION_CODE} + 5")
-    elseif (CMAKE_ANDROID_ARCH_ABI STREQUAL "mips")
-        math(EXPR ARG_VERSION_CODE "${ARG_VERSION_CODE} + 6")
-    elseif (CMAKE_ANDROID_ARCH_ABI STREQUAL "mips64")
-        math(EXPR ARG_VERSION_CODE "${ARG_VERSION_CODE} + 7")
-    elseif (CMAKE_ANDROID_ARCH_ABI STREQUAL "x86")
-        math(EXPR ARG_VERSION_CODE "${ARG_VERSION_CODE} + 8")
-    elseif (CMAKE_ANDROID_ARCH_ABI STREQUAL "x86_64")
-        math(EXPR ARG_VERSION_CODE "${ARG_VERSION_CODE} + 9")
-    else ()
-        message(WARNING "Couldn't read valid CMAKE_ANDROID_ARCH_ABI. The VERSION_CODE won't be distinguishable between different abi's")
+    set(file_extensions "")
+    # Get custom import paths provided during qt_add_qml_module call.
+    get_target_property(_existing ${TARGET} APPBASE_ASSOCIATED_EXTENSIONS)
+    if (_existing)
+        list(APPEND file_extensions ${_existing})
     endif ()
 
-    set(${VAR} ${ARG_VERSION_CODE} PARENT_SCOPE)
+    list(APPEND file_extensions "${OPTIONS_EXTENSION},${OPTIONS_MIME_TYPE},${OPTIONS_COMMENT}")
+    set_target_properties(${TARGET} PROPERTIES APPBASE_ASSOCIATED_EXTENSIONS "${file_extensions}")
+endfunction()
+
+# register_icon(target [SCALABLE svg_image] [ICO ico_image] [1024x1024 png_image] [512x512 png_image] [256x256 png_image] [128x128 png_image] [64x64 png_image] [48x48 png_image] [32x32 png_image] [16x16 png_image])
+# supported image types:
+# Linux: PNG, XPM, SVG
+# Windows: ICO
+function(register_icon TARGET)
+
+    set(options)
+    set(oneValueArgs SCALABLE ICO 1024x1024 512x512 256x256 128x128 64x64 48x48 32x32 16x16)
+    set(multiValueArgs)
+    cmake_parse_arguments(OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    set(icons "scalable^_${OPTIONS_SCALABLE}^^ico^_${OPTIONS_ICO}^^1024x1024^_${OPTIONS_1024x1024}^^512x512^_${OPTIONS_512x512}^^256x256^_${OPTIONS_256x256}^^128x128^_${OPTIONS_128x128}^^64x64^_${OPTIONS_64x64}^^48x48^_${OPTIONS_48x48}^^32x32^_${OPTIONS_32x32}^^16x16^_${OPTIONS_16x16}")
+    set_target_properties(${TARGET} PROPERTIES APPBASE_ICON "${icons}")
 endfunction()
 
 # install a target and more (APKs on Android, AppImage on Linux)
 function(install_app TARGET)
 
-    message(STATUS "install_app ${TARGET}")
-    install(TARGETS ${TARGET} BUNDLE DESTINATION . LIBRARY DESTINATION ${CMAKE_INSTALL_BINDIR} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    message(STATUS "QtAppBase: Install app ${TARGET}")
+    install(TARGETS ${TARGET} RUNTIME_DEPENDENCY_SET ${TARGET}runtime_set BUNDLE DESTINATION . LIBRARY DESTINATION ${CMAKE_INSTALL_BINDIR} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
     if (ANDROID)
-        get_target_property(APP_ANDROID_PACKAGE_SOURCE_DIR ${TARGET} QT_ANDROID_PACKAGE_SOURCE_DIR)
-        if (APP_ANDROID_PACKAGE_SOURCE_DIR)
-            message(STATUS "QT_ANDROID_PACKAGE_SOURCE_DIR target property already set - using provided AndroidManifest.xml")
-            if (EXISTS "${APP_ANDROID_PACKAGE_SOURCE_DIR}/AndroidManifest.xml.in")
-                configure_file("${APP_ANDROID_PACKAGE_SOURCE_DIR}/AndroidManifest.xml.in" "${APP_ANDROID_PACKAGE_SOURCE_DIR}/AndroidManifest.xml" @ONLY)
-            endif ()
-        else ()
-            configure_file("${current_dir}/AndroidManifest.xml.in" "${CMAKE_CURRENT_BINARY_DIR}/android_package_src/AndroidManifest.xml" @ONLY)
-            set_target_properties(${TARGET} PROPERTIES QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/android_package_src")
-        endif ()
-        gen_version_code(VERSION_CONDE)
-        set_target_properties(${TARGET} PROPERTIES QT_ANDROID_VERSION_CODE "${VERSION_CONDE}")
-        set_target_properties(${TARGET} PROPERTIES QT_ANDROID_VERSION_NAME "${PROJECT_VERSION}")
-        message(STATUS "Using Android Version Code '${VERSION_CONDE}' and Version Name '${PROJECT_VERSION}'")
-        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/android-build/$<TARGET_NAME:${TARGET}>.apk" DESTINATION .)
-        install(CODE "execute_process(COMMAND adb install \"${CMAKE_CURRENT_BINARY_DIR}/android-build/$<TARGET_NAME:${TARGET}>.apk\")")
+        include(AndroidDeploy)
+        install_android(${TARGET})
     else ()
-        qt_generate_deploy_qml_app_script(
-                TARGET ${TARGET}
-                OUTPUT_SCRIPT ${TARGET}_install_app_deploy_script
-                NO_UNSUPPORTED_PLATFORM_ERROR
-        )
+        if (Qt6Qml_DIR)
+            qt_generate_deploy_qml_app_script(
+                    TARGET ${TARGET}
+                    OUTPUT_SCRIPT ${TARGET}_install_app_deploy_script
+                    NO_UNSUPPORTED_PLATFORM_ERROR
+            )
+        else ()
+            qt_generate_deploy_app_script(
+                    TARGET ${TARGET}
+                    OUTPUT_SCRIPT ${TARGET}_install_app_deploy_script
+                    NO_UNSUPPORTED_PLATFORM_ERROR
+            )
+        endif ()
         install(SCRIPT ${${TARGET}_install_app_deploy_script})
         if (UNIX AND NOT APPLE)
             # TODO: On Unix qt_generate_deploy_qml_app_script is missing some libs. Install every Qt lib so no libs are missing
             install(CODE "
-								 file (GLOB so_files LIST_DIRECTORIES false \"${QT6_INSTALL_PREFIX}/${QT6_INSTALL_LIBS}/*.so.*\")
-								 message (STATUS \"Qt deployment is missing dependencies on Linux - Installing all Qt libs (resulting in a bigger package than necessary) \")
-								 foreach (so_file IN LISTS so_files)
-								 file (INSTALL \"\${so_file}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/${QT6_INSTALL_LIBS}\")
-								 endforeach ()
-								 message (STATUS \"Qt deployment is missing plugin dependencies on Linux - Installing all Qt plugins (resulting in a bigger package than necessary) \")
-								 file (GLOB_RECURSE so_plugin_files LIST_DIRECTORIES false RELATIVE \"${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}\" \"${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/*.so\")
-								 foreach (so_plugin_file IN LISTS so_plugin_files)
-								 get_filename_component(dir \"\${so_plugin_file}\" DIRECTORY)
-								 file (INSTALL \"${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/\${so_plugin_file}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/\${dir}\")
-								 endforeach ()
-								 ")
+                        file (GLOB so_files LIST_DIRECTORIES false \"${QT6_INSTALL_PREFIX}/${QT6_INSTALL_LIBS}/*.so.*\")
+                        message (STATUS \"Qt deployment is missing dependencies on Linux - Installing all Qt libs (resulting in a bigger package than necessary) \")
+                        foreach (so_file IN LISTS so_files)
+                        file (INSTALL \"\${so_file}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/${QT6_INSTALL_LIBS}\")
+                        endforeach ()
+                        message (STATUS \"Qt deployment is missing plugin dependencies on Linux - Installing all Qt plugins (resulting in a bigger package than necessary) \")
+                        file (GLOB_RECURSE so_plugin_files LIST_DIRECTORIES false RELATIVE \"${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}\" \"${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/*.so\")
+                        foreach (so_plugin_file IN LISTS so_plugin_files)
+                        get_filename_component(dir \"\${so_plugin_file}\" DIRECTORY)
+                        file (INSTALL \"${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/\${so_plugin_file}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/\${dir}\")
+                        endforeach ()"
+            )
         else (WIN32)
-            set(MinGwHome "$ENV{MINGW_HOME}")
-            if (EXISTS "${MinGwHome}")
-                string(REPLACE "\\" "/" MinGwHomeFw "${MinGwHome}")
-                install(CODE "
-set(MINGW_BIN \"${MinGwHomeFw}/bin\")
-file (GET_RUNTIME_DEPENDENCIES RESOLVED_DEPENDENCIES_VAR resolved UNRESOLVED_DEPENDENCIES_VAR unresolved EXECUTABLES \$<TARGET_FILE:${TARGET}> DIRECTORIES \"\${MINGW_BIN}\")
-foreach (dll_file IN LISTS resolved)
-cmake_path(IS_PREFIX MINGW_BIN \"\${dll_file}\" is_mingw_dll)
-if(is_mingw_dll)
-file (INSTALL \"\${dll_file}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\")
-endif()
-endforeach ()
-            ")
+            if (CMAKE_RC_COMPILER)
+                configure_file("${current_dir}/win32resource.rc.in" "${PROJECT_BINARY_DIR}/.qtappbase/${TARGET}_win32.rc" @ONLY)
+                set(AppName "")
+                set(AppExec "")
+                set(AppArch "")
+                target_sources(${TARGET} PRIVATE "${PROJECT_BINARY_DIR}/.qtappbase/${TARGET}_win32.rc")
             endif ()
-            include(GetDependencies)
-            get_all_dependencies(${TARGET} alldeps NO_STATIC)
-            foreach (dep IN LISTS alldeps)
-                install(IMPORTED_RUNTIME_ARTIFACTS ${dep} RUNTIME OPTIONAL)
-            endforeach ()
+            install(RUNTIME_DEPENDENCY_SET ${TARGET}runtime_set
+                    PRE_EXCLUDE_REGEXES
+                    [=[api-ms-]=]
+                    [=[ext-ms-]=]
+                    [[kernel32\.dll]]
+                    POST_EXCLUDE_REGEXES
+                    [=[.*system32\/.*\.dll]=]
+                    DIRECTORIES ${CONAN_RUNTIME_LIB_DIRS} "$ENV{MINGW_HOME}/bin"
+            )
+            #include(GetDependencies)
+            #get_all_dependencies(${TARGET} alldeps NO_STATIC)
+            #foreach (dep IN LISTS alldeps)
+            #    install(IMPORTED_RUNTIME_ARTIFACTS ${dep} RUNTIME OPTIONAL)
+            #endforeach ()
             include(QtIF)
             install_qtif(${TARGET})
         endif ()
@@ -463,8 +446,6 @@ endforeach ()
     if (UNIX AND NOT ANDROID AND NOT APPLE)
         include(AppImage)
         install_appimage(${TARGET})
-        include(QtIF)
-        install_qtif(${TARGET})
     endif ()
 endfunction()
 
@@ -490,7 +471,7 @@ function(target_link_qml_module TARGET visibility MODULE_TARGET)
     if (qml_import_path)
         list(APPEND qml_import_paths ${qml_import_path})
     else ()
-        message(WARNING "The MODULE_TARGET wasn't installed using install_qml_module().")
+        message(WARNING "QtAppBase: The MODULE_TARGET wasn't installed using install_qml_module().")
     endif ()
 
     target_link_libraries(${TARGET} ${visibility} ${MODULE_TARGET})

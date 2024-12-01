@@ -5,43 +5,58 @@ function(install_qtif TARGET)
     find_program(ARCHIVEGEN_TOOL NAMES "archivegen")
     find_program(BINARYCREATOR_TOOL NAMES "binarycreator")
 
+    get_target_property(APP_APPBASE_QTIF_SOURCE_DIR ${TARGET} APPBASE_QTIF_SOURCE_DIR)
+    if (APP_APPBASE_QTIF_SOURCE_DIR)
+        message(STATUS "QtAppBase: APPBASE_QTIF_SOURCE_DIR target property set - copying over provided Qt Installer dir structure")
+    endif ()
+
     install(CODE "
-					file(REMOVE_RECURSE \"${CMAKE_INSTALL_PREFIX}/QtIF\")
+        file(REMOVE_RECURSE \"${CMAKE_INSTALL_PREFIX}/QtIF\")
 
-					file(MAKE_DIRECTORY
-					\"${CMAKE_INSTALL_PREFIX}/QtIF/config\"
-					\"${CMAKE_INSTALL_PREFIX}/QtIF/packages\"
-					\"${CMAKE_INSTALL_PREFIX}/QtIF/packages/${info.package}\"
-					\"${CMAKE_INSTALL_PREFIX}/QtIF/packages/${info.package}/data\"
-					\"${CMAKE_INSTALL_PREFIX}/QtIF/packages/${info.package}/meta\")
+        file(MAKE_DIRECTORY
+        \"${CMAKE_INSTALL_PREFIX}/QtIF/config\"
+        \"${CMAKE_INSTALL_PREFIX}/QtIF/packages\"
+        \"${CMAKE_INSTALL_PREFIX}/QtIF/packages/${info.package}\"
+        \"${CMAKE_INSTALL_PREFIX}/QtIF/packages/${info.package}/data\"
+        \"${CMAKE_INSTALL_PREFIX}/QtIF/packages/${info.package}/meta\")
 
-                    file(COPY \"${CMAKE_INSTALL_PREFIX}/LICENSE\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/QtIF/packages/${info.package}/meta\")
+        if(${APP_APPBASE_QTIF_SOURCE_DIR})
+            file(COPY \"${APP_APPBASE_QTIF_SOURCE_DIR}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/QtIF\")
+        endif()
 
-					set(AppName \"\$<TARGET_FILE_BASE_NAME:${TARGET}>\")
-                    set(AppExec \"\$<TARGET_FILE_NAME:${TARGET}>\")
-                    set(AppExecDir \"${CMAKE_INSTALL_BINDIR}\")
+        file(COPY \"${CMAKE_INSTALL_PREFIX}/LICENSE\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/QtIF/packages/${info.package}/meta\")
 
-                    # Make info.json available
-                    set(CMAKE_MODULE_PATH \"${CMAKE_MODULE_PATH}\")
-                    include(QtAppBase)
-                    parse_info(\"${PROJECT_SOURCE_DIR}/info.json\")
-					string(TIMESTAMP TODAY \"%Y-%m-%d\")
-					set(at @)
-					set(OutName \"${info.projectName}-${info.versionString}-${CMAKE_SYSTEM_PROCESSOR}\")
+        set(AppName \"\$<TARGET_FILE_BASE_NAME:${TARGET}>\")
+        set(AppExec \"\$<TARGET_FILE_NAME:${TARGET}>\")
+        set(AppExecDir \"${CMAKE_INSTALL_BINDIR}\")
 
-					configure_file(\"${current_dir}/QtIF.config.in\" \"${CMAKE_INSTALL_PREFIX}/QtIF/config/config.xml\" @ONLY)
-					configure_file(\"${current_dir}/QtIF.package.in\" \"${CMAKE_INSTALL_PREFIX}/QtIF/packages/${info.package}/meta/package.xml\" @ONLY)
+        # Make info.json available
+        set(CMAKE_MODULE_PATH \"${CMAKE_MODULE_PATH}\")
+        include(QtAppBase)
+        parse_info(\"${PROJECT_SOURCE_DIR}/info.json\")
+        string(TIMESTAMP TODAY \"%Y-%m-%d\")
+        set(at @)
+        set(OutName \"${info.projectName}-${info.versionString}-${CMAKE_SYSTEM_PROCESSOR}\")
 
-                    if(EXISTS \"${CMAKE_INSTALL_FULL_BINDIR}\")
-                        execute_process(COMMAND ${ARCHIVEGEN_TOOL} -f 7z -c 5 \"QtIF/packages/${info.package}/data/${CMAKE_INSTALL_BINDIR}\" \"${CMAKE_INSTALL_BINDIR}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
-                    endif()
-                    if(EXISTS \"${CMAKE_INSTALL_FULL_LIBDIR}\")
-                        execute_process(COMMAND ${ARCHIVEGEN_TOOL} -f 7z -c 5 \"QtIF/packages/${info.package}/data/${CMAKE_INSTALL_LIBDIR}\" \"${CMAKE_INSTALL_LIBDIR}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
-                    endif()
-                    if(EXISTS \"${CMAKE_INSTALL_FULL_INCLUDEDIR}\")
-                        execute_process(COMMAND ${ARCHIVEGEN_TOOL} -f 7z -c 5 \"QtIF/packages/${info.package}/data/${CMAKE_INSTALL_INCLUDEDIR}\" \"${CMAKE_INSTALL_INCLUDEDIR}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
-                    endif()
-					execute_process(COMMAND ${BINARYCREATOR_TOOL} -f -c QtIF/config/config.xml -p QtIF/packages \"\${OutName}-installer${CMAKE_EXECUTABLE_SUFFIX}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
-")
+        configure_file(\"${current_dir}/QtIF.config.in\" \"${CMAKE_INSTALL_PREFIX}/QtIF/config/config.xml\" @ONLY)
+        configure_file(\"${current_dir}/QtIF.package.in\" \"${CMAKE_INSTALL_PREFIX}/QtIF/packages/${info.package}/meta/package.xml\" @ONLY)
+
+        if(EXISTS \"${CMAKE_INSTALL_FULL_BINDIR}\")
+            execute_process(COMMAND ${ARCHIVEGEN_TOOL} -f 7z -c 5 \"QtIF/packages/${info.package}/data/${CMAKE_INSTALL_BINDIR}\" \"${CMAKE_INSTALL_BINDIR}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
+        endif()
+        if(EXISTS \"${CMAKE_INSTALL_FULL_LIBDIR}\")
+            execute_process(COMMAND ${ARCHIVEGEN_TOOL} -f 7z -c 5 \"QtIF/packages/${info.package}/data/${CMAKE_INSTALL_LIBDIR}\" \"${CMAKE_INSTALL_LIBDIR}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
+        endif()
+        if(EXISTS \"${CMAKE_INSTALL_FULL_INCLUDEDIR}\")
+            execute_process(COMMAND ${ARCHIVEGEN_TOOL} -f 7z -c 5 \"QtIF/packages/${info.package}/data/${CMAKE_INSTALL_INCLUDEDIR}\" \"${CMAKE_INSTALL_INCLUDEDIR}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
+        endif()
+        if(EXISTS \"${CMAKE_INSTALL_PREFIX}/plugins\")
+            execute_process(COMMAND ${ARCHIVEGEN_TOOL} -f 7z -c 5 \"QtIF/packages/${info.package}/data/plugins\" \"plugins\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
+        endif()
+        if(EXISTS \"${CMAKE_INSTALL_PREFIX}/translations\")
+            execute_process(COMMAND ${ARCHIVEGEN_TOOL} -f 7z -c 5 \"QtIF/packages/${info.package}/data/translations\" \"translations\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
+        endif()
+        execute_process(COMMAND ${BINARYCREATOR_TOOL} -f -c QtIF/config/config.xml -p QtIF/packages \"\${OutName}-installer${CMAKE_EXECUTABLE_SUFFIX}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
+    ")
 
 endfunction()

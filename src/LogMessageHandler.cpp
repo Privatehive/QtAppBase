@@ -1,6 +1,6 @@
 ﻿#include "LogMessageHandler.h"
 #include <QRegularExpression>
-#ifdef _WIN32
+#ifdef Q_OS_WINDOWS
 #include <qt_windows.h> // we need this for OutputDebugString()
 #endif
 #ifdef Q_OS_ANDROID
@@ -182,6 +182,16 @@ void LogMessageHandler::dbug_msg_handler(QtMsgType type, const QMessageLogContex
 #endif // OutputDebugString
 
 	if(type == QtFatalMsg) {
+#ifdef QT_FEATURE_messagebox
+		if(QApplication::instance()->thread() == QThread::currentThread()) {
+			QMessageBox msgBox;
+			QString msgBoxString = QString(rMessage);
+			msgBoxString.append("\nApplication will be terminated due to Fatal-Error.");
+			msgBox.setText(msgBoxString);
+			msgBox.setIcon(QMessageBox::Critical);
+			msgBox.exec();
+		}
+#endif
 		QCoreApplication::instance()->exit(1);
 	}
 }

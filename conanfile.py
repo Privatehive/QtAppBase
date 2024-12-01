@@ -29,7 +29,7 @@ class QtAppBaseConan(ConanFile):
     tool_requires = ["cmake/[>=3.21.7]", "ninja/[>=1.11.1]"]
     # ---Sources---
     exports = ["info.json", "LICENSE"]
-    exports_sources = ["info.json", "LICENSE", "*.txt", "src/*", "CMake/*"]
+    exports_sources = ["info.json", "LICENSE", "*.txt", "src/*", "resources/*", "CMake/*"]
     # ---Binary model---
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False],
@@ -64,7 +64,7 @@ class QtAppBaseConan(ConanFile):
         if str(self.settings.os) not in valid_os:
             raise ConanInvalidConfiguration(
                 f"{self.name} {self.version} is only supported for the following operating systems: {valid_os}")
-        valid_arch = ["x86_64", "x86", "armv7", "armv8"]
+        valid_arch = ["x86_64", "x86", "armv6", "armv7", "armv8"]
         if str(self.settings.arch) not in valid_arch:
             raise ConanInvalidConfiguration(
                 f"{self.name} {self.version} is only supported for the following architectures on {self.settings.os}: {valid_arch}")
@@ -95,6 +95,7 @@ class QtAppBaseConan(ConanFile):
         tc.variables["FEATURE_SECRETS_MANAGER"] = self.options.secretsManager
         tc.variables["FEATURE_QML"] = self.options.qml
         tc.variables["CMAKE_INTERPROCEDURAL_OPTIMIZATION"] = self.options.lto
+        tc.variables["FEATURE_TEST_APP"] = True
         tc.generate()
         ms.generate()
 
@@ -110,6 +111,7 @@ class QtAppBaseConan(ConanFile):
         cmake.install()
 
     def package_info(self):
+        self.cpp_info.set_property("cmake_find_mode", "none")
         self.cpp_info.builddirs = ["lib/cmake"]
         if self.options.qml:
             self.runenv_info.prepend_path("QML_IMPORT_PATH", os.path.join(self.package_folder, "qml"))
