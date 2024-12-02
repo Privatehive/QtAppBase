@@ -70,6 +70,20 @@ function(get_target_icon TARGET ICON_NAME ICON_PATH)
     endif ()
 endfunction()
 
+# Returns the first found icon
+# get_target_first_icon(<target> <icon name>... <out image path>)
+function(get_target_first_icon TARGET ICON_NAMES ICON_PATH)
+
+    set(${ICON_PATH} "NOTFOUND" PARENT_SCOPE)
+    foreach (ICON_NAME ${ICON_NAMES})
+        get_target_icon(${TARGET} ${ICON_NAME} TMP_ICON_PATH)
+        if (TMP_ICON_PATH)
+            set(${ICON_PATH} "${TMP_ICON_PATH}" PARENT_SCOPE)
+            break()
+        endif ()
+    endforeach ()
+endfunction()
+
 function(create_appimage_icons_dir TARGET ICON_NAME OUT_DIR PRIMARY_ICON)
 
     set(HAS_PRIMARY_ICON OFF)

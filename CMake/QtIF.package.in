@@ -10,4 +10,5 @@
     <Default>true</Default>
     <ForcedInstallation>true</ForcedInstallation>
     <ForcedUpdate>true</ForcedUpdate>
+    <Script>QtIF.install.qs</Script>
 </Package>
