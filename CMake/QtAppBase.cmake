@@ -417,7 +417,7 @@ function(install_app TARGET)
                         file (INSTALL \"${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/\${so_plugin_file}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/\${dir}\")
                         endforeach ()"
             )
-        else (WIN32)
+        elseif (WIN32)
             if (CMAKE_RC_COMPILER)
                 include(QtAppBaseCommon)
                 set(AppIcon "")
