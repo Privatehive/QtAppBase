@@ -99,6 +99,7 @@ if (FEATURE_TEST_APP AND FEATURE_QML)
 
     register_icon(QtAppBaseTestApp
             ICO "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase.ico"
+            ICNS "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase.icns"
             512x512 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase512.png"
             256x256 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase256.png"
             128x128 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase128.png"

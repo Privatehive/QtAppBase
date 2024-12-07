@@ -16,6 +16,7 @@ macro(parse_info INFO_FILE)
     string(TOLOWER "${info.projectName}" info.projectNameLowerCase)
     set(info.package "${info.domain}.${info.projectNameLowerCase}")
     string(REPLACE "." "/" info.packagejni "${info.package}")
+    set(info.copyrightString "Copyright (c) ${info.copyrightYear} ${info.vendor}")
 
     if (${info.version.snapshot})
         set(info.versionString "${info.version.major}.${info.version.minor}.${info.version.patch}-snapshot")
@@ -364,17 +365,18 @@ function(register_file_extension TARGET)
     set_target_properties(${TARGET} PROPERTIES APPBASE_ASSOCIATED_EXTENSIONS "${file_extensions}")
 endfunction()
 
-# register_icon(target [SCALABLE svg_image] [ICO ico_image] [1024x1024 png_image] [512x512 png_image] [256x256 png_image] [128x128 png_image] [64x64 png_image] [48x48 png_image] [32x32 png_image] [16x16 png_image])
+# register_icon(target [SCALABLE svg_image] [ICO ico_image] [ICNS ICNS_image [1024x1024 png_image] [512x512 png_image] [256x256 png_image] [128x128 png_image] [64x64 png_image] [48x48 png_image] [32x32 png_image] [16x16 png_image])
 # supported image types:
 # Linux: PNG, XPM, SVG
 # Windows: ICO
+# Macos: ICNS (use https://github.com/alptugan/icns-creator)
 function(register_icon TARGET)
 
     set(options)
-    set(oneValueArgs SCALABLE ICO 1024x1024 512x512 256x256 128x128 64x64 48x48 32x32 16x16)
+    set(oneValueArgs SCALABLE ICO ICNS 1024x1024 512x512 256x256 128x128 64x64 48x48 32x32 16x16)
     set(multiValueArgs)
     cmake_parse_arguments(OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    set(icons "scalable^_${OPTIONS_SCALABLE}^^ico^_${OPTIONS_ICO}^^1024x1024^_${OPTIONS_1024x1024}^^512x512^_${OPTIONS_512x512}^^256x256^_${OPTIONS_256x256}^^128x128^_${OPTIONS_128x128}^^64x64^_${OPTIONS_64x64}^^48x48^_${OPTIONS_48x48}^^32x32^_${OPTIONS_32x32}^^16x16^_${OPTIONS_16x16}")
+    set(icons "scalable^_${OPTIONS_SCALABLE}^^ico^_${OPTIONS_ICO}^^icns^_${OPTIONS_ICNS}^^1024x1024^_${OPTIONS_1024x1024}^^512x512^_${OPTIONS_512x512}^^256x256^_${OPTIONS_256x256}^^128x128^_${OPTIONS_128x128}^^64x64^_${OPTIONS_64x64}^^48x48^_${OPTIONS_48x48}^^32x32^_${OPTIONS_32x32}^^16x16^_${OPTIONS_16x16}")
     set_target_properties(${TARGET} PROPERTIES APPBASE_ICON "${icons}")
 endfunction()
 
@@ -382,6 +384,21 @@ endfunction()
 function(install_app TARGET)
 
     message(STATUS "QtAppBase: Install app ${TARGET}")
+
+    if (APPLE)
+        include(QtAppBaseCommon)
+        set_target_properties(${TARGET} PROPERTIES MACOSX_BUNDLE_BUNDLE_NAME "${info.projectName}")
+        set_target_properties(${TARGET} PROPERTIES MACOSX_BUNDLE_COPYRIGHT "${info.copyrightString}")
+        set_target_properties(${TARGET} PROPERTIES MACOSX_BUNDLE_GUI_IDENTIFIER "${info.package}")
+        set_target_properties(${TARGET} PROPERTIES MACOSX_BUNDLE_INFO_STRING "${info.description}")
+        get_target_icon(${TARGET} ICNS ICNS_ICON)
+        if(ICNS_ICON)
+            get_filename_component(ICO_ICON_NAME "${ICNS_ICON}" NAME)
+            set_target_properties(${TARGET} PROPERTIES MACOSX_BUNDLE_ICON_FILE "${ICO_ICON_NAME}")
+            install(FILES "${ICNS_ICON}" DESTINATION "$<TARGET_FILE_NAME:${TARGET}>.app/Contents/Resources")
+        endif()
+    endif ()
+
     install(TARGETS ${TARGET} RUNTIME_DEPENDENCY_SET ${TARGET}runtime_set BUNDLE DESTINATION . LIBRARY DESTINATION ${CMAKE_INSTALL_BINDIR} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
     if (ANDROID)
@@ -401,7 +418,9 @@ function(install_app TARGET)
                     NO_UNSUPPORTED_PLATFORM_ERROR
             )
         endif ()
+
         install(SCRIPT ${${TARGET}_install_app_deploy_script})
+
         if (UNIX AND NOT APPLE)
             # TODO: On Unix qt_generate_deploy_qml_app_script is missing some libs. Install every Qt lib so no libs are missing
             install(CODE "
@@ -449,6 +468,17 @@ function(install_app TARGET)
             #endforeach ()
             include(QtIF)
             install_qtif(${TARGET})
+        elseif (APPLE)
+            cmake_path(GET MACDEPLOYQT_EXECUTABLE PARENT_PATH QT_BIN_PATH)
+            cmake_path(GET QT_BIN_PATH PARENT_PATH QT_ROOT_PATH)
+            install(RUNTIME_DEPENDENCY_SET ${TARGET}runtime_set
+                DESTINATION
+                "$<TARGET_FILE_NAME:${TARGET}>.app/Contents/Frameworks"
+                PRE_EXCLUDE_REGEXES
+                Qt.*\.framework
+                POST_EXCLUDE_REGEXES
+                "${QT_ROOT_PATH}/.*"
+                DIRECTORIES ${CONAN_RUNTIME_LIB_DIRS})
         endif ()
     endif ()
     if (UNIX AND NOT ANDROID AND NOT APPLE)
