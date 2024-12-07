@@ -95,7 +95,7 @@ class QtAppBaseConan(ConanFile):
         tc.variables["FEATURE_SECRETS_MANAGER"] = self.options.secretsManager
         tc.variables["FEATURE_QML"] = self.options.qml
         tc.variables["CMAKE_INTERPROCEDURAL_OPTIMIZATION"] = self.options.lto
-        tc.variables["FEATURE_TEST_APP"] = self.options.secretsManager and self.options.qml
+        #tc.variables["FEATURE_TEST_APP"] = self.options.secretsManager and self.options.qml
         tc.generate()
         ms.generate()
 
