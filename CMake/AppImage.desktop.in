@@ -1,7 +1,7 @@
 [Desktop Entry]
-Name=@info.projectName@
+Name=@AppName@
 Exec=@AppExec@
-Icon=@info.projectName@
+@AppIcon@
 Type=Application
 Comment=@info.projectDescription@
 Categories=@info.categories_list@

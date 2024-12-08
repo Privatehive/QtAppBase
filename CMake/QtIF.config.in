@@ -8,4 +8,8 @@
     <StartMenuDir>@info.projectName@</StartMenuDir>
     <TargetDir>@at@HomeDir@at@/@info.projectName@</TargetDir>
     <RunProgram>@at@TargetDir@at@/@AppExecDir@/@AppExec@</RunProgram>
+    <WizardShowPageList>false</WizardShowPageList>
+    <AllowNonAsciiCharacters>true</AllowNonAsciiCharacters>
+    @AppIco@
+    @AppWindowIcon@
 </Installer>
