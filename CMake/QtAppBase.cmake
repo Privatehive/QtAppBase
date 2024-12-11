@@ -14,7 +14,7 @@ macro(parse_info INFO_FILE)
     sbeParseJson(info jsonInfo)
 
     string(TOLOWER "${info.projectName}" info.projectNameLowerCase)
-    set(info.package "${info.domain}.${info.projectNameLowerCase}")
+    string(REGEX REPLACE "[^a-zA-Z0-9.]" "" info.package "${info.domain}.${info.projectNameLowerCase}")
     string(REPLACE "." "/" info.packagejni "${info.package}")
     set(info.copyrightString "Copyright (c) ${info.copyrightYear} ${info.vendor}")
 
