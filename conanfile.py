@@ -36,12 +36,14 @@ class QtAppBaseConan(ConanFile):
                "fPIC": [True, False],
                "lto": [True, False],
                "secretsManager": [True, False],
-               "qml": [True, False]}
+               "qml": [True, False],
+               "testapp": [True, False]}
     default_options = {"shared": True,
                        "fPIC": True,
                        "lto": False,
                        "secretsManager": False,
                        "qml": False,
+                       "testapp": False,
                        "qt/*:qtbase": True
                        }
     # ---Build---
@@ -95,7 +97,7 @@ class QtAppBaseConan(ConanFile):
         tc.variables["FEATURE_SECRETS_MANAGER"] = self.options.secretsManager
         tc.variables["FEATURE_QML"] = self.options.qml
         tc.variables["CMAKE_INTERPROCEDURAL_OPTIMIZATION"] = self.options.lto
-        tc.variables["FEATURE_TEST_APP"] = self.options.secretsManager and self.options.qml
+        tc.variables["FEATURE_TEST_APP"] = self.options.testapp
         tc.generate()
         ms.generate()
 
