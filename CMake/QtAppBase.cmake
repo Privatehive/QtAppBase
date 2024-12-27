@@ -478,6 +478,11 @@ function(install_app TARGET)
         elseif (APPLE)
             cmake_path(GET MACDEPLOYQT_EXECUTABLE PARENT_PATH QT_BIN_PATH)
             cmake_path(GET QT_BIN_PATH PARENT_PATH QT_ROOT_PATH)
+            set(SIGN_CMD "")
+            if(DEFINED ENV{APPLE_CODESIGN_IDENTITY})
+                message(STATUS "QtAppBase: signing app using identity $ENV{APPLE_CODESIGN_IDENTITY}")
+                set(SIGN_CMD "-sign-for-notarization=$ENV{APPLE_CODESIGN_IDENTITY}")
+            endif()
             install(RUNTIME_DEPENDENCY_SET ${TARGET}runtime_set
                 DESTINATION
                 "$<TARGET_FILE_NAME:${TARGET}>.app/Contents/Frameworks"
@@ -488,7 +493,7 @@ function(install_app TARGET)
                 DIRECTORIES ${CONAN_RUNTIME_LIB_DIRS})
             install(CODE "
                 set(OutName \"${info.projectName}-${info.versionString}-${CMAKE_SYSTEM_PROCESSOR}\")
-                execute_process(COMMAND \"${MACDEPLOYQT_EXECUTABLE}\" \"\$<TARGET_FILE_NAME:${TARGET}>.app\" -dmg -no-plugins -appstore-compliant WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
+                execute_process(COMMAND \"${MACDEPLOYQT_EXECUTABLE}\" \"\$<TARGET_FILE_NAME:${TARGET}>.app\" -dmg -no-plugins ${SIGN_CMD} -appstore-compliant WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
                 file(RENAME \"${CMAKE_INSTALL_PREFIX}/\$<TARGET_FILE_NAME:${TARGET}>.dmg\" \"${CMAKE_INSTALL_PREFIX}/\${OutName}.dmg\")
             ")
         endif ()
