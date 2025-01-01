@@ -21,74 +21,103 @@ void SecretsManager::setFallbackSettings(std::unique_ptr<QSettings> settings) {
 	fallbackSettings = std::move(settings);
 }
 
+void SecretsManager::enforceFallback(bool useFallback) {
+
+	forceFallback = useFallback;
+}
+
 void SecretsManager::setNamespace(const QString &ns) {
 
 	overwriteNamespace = ns;
 }
 
-void SecretsManager::writeSecret(const QString &alias, const QString &value, std::function<void()> callback,
+void SecretsManager::writeSecret(const QString &alias, const QString &value, std::function<void(bool fallback)> callback,
                                  QObject *watcher /*= nullptr*/) {
 
 	if(!alias.isEmpty()) {
-		auto job = new QKeychain::WritePasswordJob(SecretsManager::getNamespace(), watcher ? watcher : qApp);
-		job->setKey(alias);
-		job->setTextData(value);
-		job->setInsecureFallback(false);
-		job->setAutoDelete(true);
-		QObject::connect(job, &QKeychain::Job::finished, watcher ? watcher : qApp, [alias, value, callback](QKeychain::Job *job) {
-			if(job->error()) {
-				qWarning(secretsmanager) << "Could not write secret to OS secrets manager:" << qPrintable(job->errorString());
-				qInfo(secretsmanager) << "Fallback to settings file secret obfuscation";
-				SecretsManager::fallbackWriteSecret(alias, value);
-			}
-			qDebug(secretsmanager) << "Wrote secret:" << alias;
-			callback();
-		});
-		job->start();
+		if(forceFallback) {
+			qDebug(secretsmanager) << "Wrote secret (fallback):" << alias;
+			SecretsManager::fallbackWriteSecret(alias, value);
+			callback(true);
+		} else {
+			auto job = new QKeychain::WritePasswordJob(SecretsManager::getNamespace(), watcher ? watcher : qApp);
+			job->setKey(alias);
+			job->setTextData(value);
+			job->setInsecureFallback(false);
+			job->setAutoDelete(true);
+			QObject::connect(job, &QKeychain::Job::finished, watcher ? watcher : qApp, [alias, value, callback](QKeychain::Job *job) {
+				auto isFallback = false;
+				if(job->error()) {
+					forceFallback = isFallback = true;
+					qWarning(secretsmanager) << "Could not write secret to OS secrets manager:" << qPrintable(job->errorString());
+					qInfo(secretsmanager) << "Fallback to settings file secret";
+					qDebug(secretsmanager) << "Wrote secret (fallback):" << alias;
+					SecretsManager::fallbackWriteSecret(alias, value);
+				} else {
+					qDebug(secretsmanager) << "Wrote secret (secrets manager):" << alias;
+				}
+				callback(isFallback);
+			});
+			job->start();
+		}
 	} else {
-		callback();
+		callback(false);
 	}
 }
 
-void SecretsManager::readSecret(const QString &alias, std::function<void(QString)> callback, QObject *watcher /*= nullptr*/) {
+void SecretsManager::readSecret(const QString &alias, std::function<void(QString value, bool fallback)> callback,
+                                QObject *watcher /*= nullptr*/) {
 
 	if(!alias.isEmpty()) {
-		auto job = new QKeychain::ReadPasswordJob(SecretsManager::getNamespace(), watcher ? watcher : qApp);
-		job->setKey(alias);
-		job->setInsecureFallback(false);
-		job->setAutoDelete(true);
-		QObject::connect(job, &QKeychain::Job::finished, watcher ? watcher : qApp, [alias, callback](QKeychain::Job *job) {
-			if(job->error()) {
-				qWarning(secretsmanager) << "Could not read secret:" << qPrintable(job->errorString());
-				qInfo(secretsmanager) << "Fallback to settings file secret";
-				callback(SecretsManager::fallbackReadSecret(alias));
-			} else {
-				auto readJob = qobject_cast<QKeychain::ReadPasswordJob *>(job);
-				callback(readJob->textData());
-			}
-			qDebug(secretsmanager) << "Read secret:" << alias;
-		});
-		job->start();
+		if(forceFallback) {
+			qDebug(secretsmanager) << "Read secret (fallback):" << alias;
+			callback(SecretsManager::fallbackReadSecret(alias), true);
+		} else {
+			auto job = new QKeychain::ReadPasswordJob(SecretsManager::getNamespace(), watcher ? watcher : qApp);
+			job->setKey(alias);
+			job->setInsecureFallback(false);
+			job->setAutoDelete(true);
+			QObject::connect(job, &QKeychain::Job::finished, watcher ? watcher : qApp, [alias, callback](QKeychain::Job *job) {
+				if(job->error()) {
+					forceFallback = true;
+					qWarning(secretsmanager) << "Could not read secret from OS secrets manager:" << qPrintable(job->errorString());
+					qInfo(secretsmanager) << "Fallback to settings file secret";
+					qDebug(secretsmanager) << "Read secret (fallback):" << alias;
+					callback(SecretsManager::fallbackReadSecret(alias), true);
+				} else {
+					qDebug(secretsmanager) << "Read secret (secrets manager):" << alias;
+					auto readJob = qobject_cast<QKeychain::ReadPasswordJob *>(job);
+					callback(readJob->textData(), false);
+				}
+			});
+			job->start();
+		}
 	} else {
-		callback({});
+		callback({}, false);
 	}
 }
 
 void SecretsManager::deleteSecret(const QString &alias, std::function<void()> callback, QObject *watcher /*= nullptr*/) {
 
 	if(!alias.isEmpty()) {
-		auto job = new QKeychain::DeletePasswordJob(SecretsManager::getNamespace(), watcher ? watcher : qApp);
-		job->setKey(alias);
-		job->setInsecureFallback(false);
-		job->setAutoDelete(true);
-		QObject::connect(job, &QKeychain::Job::finished, watcher ? watcher : qApp, [alias, callback](QKeychain::Job *job) {
-			// job->error() not reported
-			Q_UNUSED(job)
+		if(forceFallback) {
+			qDebug(secretsmanager) << "Deleted secret (fallback):" << alias;
 			SecretsManager::fallbackDeleteSecret(alias);
-			qDebug(secretsmanager) << "Deleted secret:" << alias;
 			callback();
-		});
-		job->start();
+		} else {
+			auto job = new QKeychain::DeletePasswordJob(SecretsManager::getNamespace(), watcher ? watcher : qApp);
+			job->setKey(alias);
+			job->setInsecureFallback(false);
+			job->setAutoDelete(true);
+			QObject::connect(job, &QKeychain::Job::finished, watcher ? watcher : qApp, [alias, callback](QKeychain::Job *job) {
+				// job->error() not reported
+				qDebug(secretsmanager) << "Deleted secret:" << alias;
+				Q_UNUSED(job)
+				SecretsManager::fallbackDeleteSecret(alias);
+				callback();
+			});
+			job->start();
+		}
 	} else {
 		callback();
 	}
@@ -97,56 +126,71 @@ void SecretsManager::deleteSecret(const QString &alias, std::function<void()> ca
 void SecretsManager::writeSecretSync(const QString &alias, const QString &value) {
 
 	if(!alias.isEmpty()) {
-		QEventLoop eventLoop;
-		auto job = new QKeychain::WritePasswordJob(SecretsManager::getNamespace(), &eventLoop);
-		job->setKey(alias);
-		job->setTextData(value);
-		job->setInsecureFallback(false);
-		job->setAutoDelete(true);
-		QObject::connect(
-		 job, &QKeychain::Job::finished, &eventLoop,
-		 [alias, value, &eventLoop](QKeychain::Job *job) {
-			 if(job->error()) {
-				 qWarning(secretsmanager) << "Could not write secret to OS secrets manager:" << qPrintable(job->errorString());
-				 qInfo(secretsmanager) << "Fallback to settings file secret obfuscation";
-				 SecretsManager::fallbackWriteSecret(alias, value);
-			 }
-			 qDebug(secretsmanager) << "Wrote secret:" << alias;
-			 eventLoop.exit(0);
-		 },
-		 Qt::QueuedConnection);
-		job->start();
-		eventLoop.exec();
+		if(forceFallback) {
+			qDebug(secretsmanager) << "Wrote secret (fallback):" << alias;
+			SecretsManager::fallbackWriteSecret(alias, value);
+		} else {
+			QEventLoop eventLoop;
+			auto job = new QKeychain::WritePasswordJob(SecretsManager::getNamespace(), &eventLoop);
+			job->setKey(alias);
+			job->setTextData(value);
+			job->setInsecureFallback(false);
+			job->setAutoDelete(true);
+			QObject::connect(
+			 job, &QKeychain::Job::finished, &eventLoop,
+			 [alias, value, &eventLoop](QKeychain::Job *job) {
+				 if(job->error()) {
+					 forceFallback = true;
+					 qWarning(secretsmanager) << "Could not write secret to OS secrets manager:" << qPrintable(job->errorString());
+					 qInfo(secretsmanager) << "Fallback to settings file secret";
+					 qDebug(secretsmanager) << "Wrote secret (fallback):" << alias;
+					 SecretsManager::fallbackWriteSecret(alias, value);
+				 } else {
+					 qDebug(secretsmanager) << "Wrote secret (secrets manager):" << alias;
+				 }
+				 eventLoop.exit(0);
+			 },
+			 Qt::QueuedConnection);
+			job->start();
+			eventLoop.exec();
+		}
 	}
 }
 
 QString SecretsManager::readSecretSync(const QString &alias) {
 
 	if(!alias.isEmpty()) {
-		QString secret;
-		QEventLoop eventLoop;
-		auto job = new QKeychain::ReadPasswordJob(SecretsManager::getNamespace(), &eventLoop);
-		job->setKey(alias);
-		job->setInsecureFallback(false);
-		job->setAutoDelete(true);
-		QObject::connect(
-		 job, &QKeychain::Job::finished, &eventLoop,
-		 [alias, &secret, &eventLoop](QKeychain::Job *job) {
-			 if(job->error()) {
-				 qWarning(secretsmanager) << "Could not read secret:" << qPrintable(job->errorString());
-				 qInfo(secretsmanager) << "Fallback to settings file secret";
-				 secret = SecretsManager::fallbackReadSecret(alias);
-			 } else {
-				 auto readJob = qobject_cast<QKeychain::ReadPasswordJob *>(job);
-				 secret = readJob->textData();
-			 }
-			 qDebug(secretsmanager) << "Read secret:" << alias;
-			 eventLoop.exit(0);
-		 },
-		 Qt::QueuedConnection);
-		job->start();
-		eventLoop.exec();
-		return secret;
+		if(forceFallback) {
+			qDebug(secretsmanager) << "Read secret (fallback):" << alias;
+			return SecretsManager::fallbackReadSecret(alias);
+		} else {
+			QString secret;
+			QEventLoop eventLoop;
+			auto job = new QKeychain::ReadPasswordJob(SecretsManager::getNamespace(), &eventLoop);
+			job->setKey(alias);
+			job->setInsecureFallback(false);
+			job->setAutoDelete(true);
+			QObject::connect(
+			 job, &QKeychain::Job::finished, &eventLoop,
+			 [alias, &secret, &eventLoop](QKeychain::Job *job) {
+				 if(job->error()) {
+					 forceFallback = true;
+					 qWarning(secretsmanager) << "Could not read secret from OS secrets manager:" << qPrintable(job->errorString());
+					 qInfo(secretsmanager) << "Fallback to settings file secret";
+					 qDebug(secretsmanager) << "Read secret (secrets manager):" << alias;
+					 secret = SecretsManager::fallbackReadSecret(alias);
+				 } else {
+					 qDebug(secretsmanager) << "Read secret (fallback):" << alias;
+					 auto readJob = qobject_cast<QKeychain::ReadPasswordJob *>(job);
+					 secret = readJob->textData();
+				 }
+				 eventLoop.exit(0);
+			 },
+			 Qt::QueuedConnection);
+			job->start();
+			eventLoop.exec();
+			return secret;
+		}
 	} else {
 		return {};
 	}
@@ -155,23 +199,28 @@ QString SecretsManager::readSecretSync(const QString &alias) {
 void SecretsManager::deleteSecretSync(const QString &alias) {
 
 	if(!alias.isEmpty()) {
-		QString secret;
-		QEventLoop eventLoop;
-		auto job = new QKeychain::DeletePasswordJob(SecretsManager::getNamespace(), &eventLoop);
-		job->setKey(alias);
-		job->setInsecureFallback(false);
-		job->setAutoDelete(true);
-		QObject::connect(
-		 job, &QKeychain::Job::finished, &eventLoop,
-		 [alias, &secret, &eventLoop](QKeychain::Job *job) {
-			 // job->error not reported
-			 SecretsManager::fallbackDeleteSecret(alias);
-			 qDebug(secretsmanager) << "Deleted secret:" << alias;
-			 eventLoop.exit(0);
-		 },
-		 Qt::QueuedConnection);
-		job->start();
-		eventLoop.exec();
+		if(forceFallback) {
+			qDebug(secretsmanager) << "Deleted secret (fallback):" << alias;
+			SecretsManager::fallbackDeleteSecret(alias);
+		} else {
+			QString secret;
+			QEventLoop eventLoop;
+			auto job = new QKeychain::DeletePasswordJob(SecretsManager::getNamespace(), &eventLoop);
+			job->setKey(alias);
+			job->setInsecureFallback(false);
+			job->setAutoDelete(true);
+			QObject::connect(
+			 job, &QKeychain::Job::finished, &eventLoop,
+			 [alias, &secret, &eventLoop](QKeychain::Job *job) {
+				 // job->error not reported
+				 qDebug(secretsmanager) << "Deleted secret:" << alias;
+				 SecretsManager::fallbackDeleteSecret(alias);
+				 eventLoop.exit(0);
+			 },
+			 Qt::QueuedConnection);
+			job->start();
+			eventLoop.exec();
+		}
 	}
 }
 
@@ -208,6 +257,8 @@ QByteArray SecretsManager::getMachineId() {
 }
 
 std::unique_ptr<QSettings> SecretsManager::fallbackSettings = std::unique_ptr<QSettings>(nullptr);
+
+bool SecretsManager::forceFallback = false;
 
 QString SecretsManager::overwriteNamespace = {};
 

@@ -2,7 +2,7 @@
 #include "SecretsManager.h"
 
 
-Secret::Secret(QObject *parent) : QObject(parent), mAlias(), mSecretValue() {}
+Secret::Secret(QObject *parent) : QObject(parent), mAlias(), mSecretValue(), mFallback(false) {}
 
 QString Secret::getAlias() const {
 
@@ -14,10 +14,14 @@ void Secret::setAlias(const QString &alias) {
 	mAlias = alias;
 	SecretsManager::readSecret(
 	 getAlias(),
-	 [this](QString secret) {
+	 [this](QString secret, bool fallback) {
 		 mSecretValue = secret;
 		 emit valueChanged();
 		 emit secretRead(secret);
+		 if(fallback != mFallback) {
+			 mFallback = fallback;
+			 emit fallbackChanged();
+		 }
 	 },
 	 this);
 	emit aliasChanged();
@@ -30,9 +34,23 @@ QString Secret::getValue() const {
 
 void Secret::setValue(const QString &secret) {
 
-	SecretsManager::writeSecret(getAlias(), secret, [this]() { emit secretWritten(); }, this);
+	SecretsManager::writeSecret(
+	 getAlias(), secret,
+	 [this](bool fallback) {
+		 emit secretWritten();
+		 if(fallback != mFallback) {
+			 mFallback = fallback;
+			 emit fallbackChanged();
+		 }
+	 },
+	 this);
 	mSecretValue = secret;
 	emit valueChanged();
+}
+
+bool Secret::isFallback() const {
+
+	return mFallback;
 }
 
 void Secret::deleteSecret(const QString &alias) {
