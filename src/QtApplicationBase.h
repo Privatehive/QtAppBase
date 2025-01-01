@@ -84,7 +84,8 @@ void QtApplicationBase<T>::set(const QString &applicationName, const QString &ap
 template<class T>
 QString QtApplicationBase<T>::getCacheLocation() {
 
-#ifdef QT_DEBUG
+#if defined(QT_DEBUG) && !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS) && !defined(Q_OS_TVOS) && !defined(Q_OS_WATCHOS) && \
+ !defined(Q_OS_VISIONOS) && !defined(Q_OS_WASM)
 	return QCoreApplication::applicationDirPath() + "/cache";
 #else
 	return QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
@@ -94,7 +95,8 @@ QString QtApplicationBase<T>::getCacheLocation() {
 template<class T>
 QString QtApplicationBase<T>::getDataLocation() {
 
-#ifdef QT_DEBUG
+#if defined(QT_DEBUG) && !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS) && !defined(Q_OS_TVOS) && !defined(Q_OS_WATCHOS) && \
+ !defined(Q_OS_VISIONOS) && !defined(Q_OS_WASM)
 	return QCoreApplication::applicationDirPath() + "/data";
 #else
 	return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
@@ -104,7 +106,8 @@ QString QtApplicationBase<T>::getDataLocation() {
 template<class T>
 QString QtApplicationBase<T>::getConfigLocation() {
 
-#ifdef QT_DEBUG
+#if defined(QT_DEBUG) && !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS) && !defined(Q_OS_TVOS) && !defined(Q_OS_WATCHOS) && \
+ !defined(Q_OS_VISIONOS) && !defined(Q_OS_WASM)
 	return QCoreApplication::applicationDirPath() + "/config";
 #else
 	return QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
