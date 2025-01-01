@@ -11,69 +11,20 @@ ApplicationWindow {
         anchors.centerIn: parent
 
         Label {
-            text: "secret: " + secret.secret
+            text: "secret " + (secret.fallback ? "(fallback): " : ": ") + secret.value
         }
 
         TextField {
             width: 240
-            text: secret.secret
+            text: secret.value
             onTextEdited: {
-                secret.secret = text
+                secret.value = text
             }
-        }
-
-        Button {
-            text: "open dialog"
-            onClicked: dialog.open()
         }
 
         Secret {
             id: secret
             alias: "test"
-        }
-    }
-
-    Dialog {
-        id: dialog
-        title: "Title"
-        parent: Overlay.overlay
-        width: 300
-
-        Label {
-            text: "Window width: " + Window.contentItem + " - " + ApplicationWindow.contentItem + " - " + ApplicationWindow.window.contentItem
-        }
-        
-        Component.onCompleted: {
-
-            console.log("---------------------------");
-            for (let key in ApplicationWindow) {
-                console.log(key, ApplicationWindow[key]);
-            }
-            console.log("-----");
-            for (let key in Window) {
-                console.log(key, Window[key]);
-            }
-            console.log("---------------------------");
-        }
-
-        onOpened: {
-
-            console.log("---------------------------");
-            console.log("-----" + ApplicationWindow);
-            for (let key in ApplicationWindow) {
-                console.log(key, ApplicationWindow[key]);
-            }
-            console.log("");
-            console.log("----- " + Window);
-            for (let key in Window) {
-                console.log(key, Window[key]);
-            }
-            console.log("");
-            console.log("----- " + ApplicationWindow.window);
-            for (let key in ApplicationWindow.window) {
-                console.log(key, ApplicationWindow.window[key]);
-            }
-            console.log("---------------------------");
         }
     }
 }

@@ -11,13 +11,17 @@ class QTAPPBASE_EXPORT SecretsManager {
  public:
 	// If there is no os secretstore support the secret will be written obfuscated into this settings file (defaults to new QSettings())
 	static void setFallbackSettings(std::unique_ptr<QSettings> settings);
+	// Always enforce the usage of the settings file fallback mechanism
+	static void enforceFallback(bool useFallback);
 	// You may want to overwrite the default namespace (<organizationDomain>.<applicationName>) where the secrets will be
 	// stored in the secretstore
 	static void setNamespace(const QString &ns);
-	// Write a secret asynchronous
-	static void writeSecret(const QString &alias, const QString &value, std::function<void()> callback, QObject *watcher = nullptr);
-	// Read a secret asynchronous
-	static void readSecret(const QString &alias, std::function<void(QString)> callback, QObject *watcher = nullptr);
+	// Write a secret asynchronous (if the callback 'fallback' parameter equals true the secret was written obfuscated into this settings
+	// file)
+	static void writeSecret(const QString &alias, const QString &value, std::function<void(bool fallback)> callback,
+	                        QObject *watcher = nullptr);
+	// Read a secret asynchronous (if the callback 'fallback' parameter equals true the secret was read from the settings file)
+	static void readSecret(const QString &alias, std::function<void(QString value, bool fallback)> callback, QObject *watcher = nullptr);
 	// Delete a secret asynchronous
 	static void deleteSecret(const QString &alias, std::function<void()> callback, QObject *watcher = nullptr);
 	// Write a secret synchronous (blocking as long as secret is written)
@@ -45,6 +49,7 @@ class QTAPPBASE_EXPORT SecretsManager {
 
  private:
 	static std::unique_ptr<QSettings> fallbackSettings;
+	static bool forceFallback; // always write to fallback settings
 	static QString overwriteNamespace;
 	static QSettings *getFallbackSettings();
 	static void fallbackWriteSecret(const QString &alias, const QString &value);
