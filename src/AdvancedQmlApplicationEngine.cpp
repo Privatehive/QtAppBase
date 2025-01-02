@@ -63,7 +63,7 @@ void AdvancedQmlApplicationEngine::loadRootItem(const QString &rootItem, bool us
 
 #ifdef QT_DEBUG
 	globalObject().setProperty("isDebug", QJSValue(true));
-#elif
+#else
 	globalObject().setProperty("isDebug", QJSValue(false));
 #endif
 
