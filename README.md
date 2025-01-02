@@ -20,7 +20,9 @@
 
 * `LogMessageHandler` logger with log rotation functionality
 * `QtApplicationBase` a wrapper for native Qt QCoreApplication, QGuiApplication classes used for bootstrapping
-* [`qml=True`] `QmlApplicationEngine` with hot reloading support
+* [`qml=True`] `QmlApplicationEngine` with hot reloading support:
+    * Injects global function `instanceOf(var item, var type)` to workaround broken `instanceOf` check after hot reload.
+    * Injects global property `isDebug` which equals `true` if QtAppBase was compiled as debug, `false` otherwise.
 * `SecretsManager`
 * CMake based deployment for Android, Linux, Windows
     * Linux: AppImage
