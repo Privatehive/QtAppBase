@@ -58,7 +58,7 @@ class QtAppBaseConan(ConanFile):
     def build_requirements(self):
         if self.settings.os == "Linux":
             self.tool_requires("appimagetool/continuous@%s/stable" % self.user, visible=True)
-        if self.settings.os == "Windows" or self.settings.os == "Linux":
+        if self.settings.os == "Windows":
             self.tool_requires("qtinstaller/4.8.0@%s/stable" % self.user, visible=True)
 
     def validate(self):

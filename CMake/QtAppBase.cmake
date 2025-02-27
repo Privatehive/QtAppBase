@@ -387,6 +387,25 @@ function(register_icon TARGET)
     set_target_properties(${TARGET} PROPERTIES APPBASE_ICON "${icons}")
 endfunction()
 
+# register_aux_path(target DIRECTORY dir NAME name)
+# make a directory accessible via Macro AUX_<name>
+function(register_aux_path TARGET)
+
+    set(options)
+    set(oneValueArgs DIRECTORY NAME)
+    set(multiValueArgs)
+    cmake_parse_arguments(OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    string(TOUPPER "${OPTIONS_NAME}" OPTIONS_NAME_UPPER)
+    cmake_path(NORMAL_PATH OPTIONS_DIRECTORY OUTPUT_VARIABLE OPTIONS_DIRECTORY_NORM)
+    install(DIRECTORY "${OPTIONS_DIRECTORY_NORM}" DESTINATION "${CMAKE_INSTALL_DATADIR}")
+    cmake_path(GET OPTIONS_DIRECTORY_NORM FILENAME OPTIONS_DIRECTORY_NAME)
+    set(MACRO_NAME AUX_${OPTIONS_NAME_UPPER})
+    set(BUILD_INTERFACE_DIR "${OPTIONS_DIRECTORY_NORM}")
+    set(INSTALL_INTERFACE_DIR "${CMAKE_INSTALL_DATADIR}/${OPTIONS_DIRECTORY_NAME}")
+    message(STATUS "QtAppBase: Registered aux path macro ${MACRO_NAME} ${BUILD_INTERFACE_DIR} ${INSTALL_INTERFACE_DIR}")
+    target_compile_definitions(${TARGET} PRIVATE $<BUILD_INTERFACE:${MACRO_NAME}="${BUILD_INTERFACE_DIR}"> $<INSTALL_INTERFACE:${MACRO_NAME}="${INSTALL_INTERFACE_DIR}">)
+endfunction()
+
 # install a target and more (APKs on Android, AppImage on Linux)
 function(install_app TARGET)
 
@@ -492,6 +511,9 @@ function(install_app TARGET)
                 "${QT_ROOT_PATH}/.*"
                 DIRECTORIES ${CONAN_RUNTIME_LIB_DIRS})
             install(CODE "
+                if(EXISTS \"${CMAKE_INSTALL_FULL_DATADIR}\")
+                    file(COPY \"${CMAKE_INSTALL_FULL_DATADIR}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/\$<TARGET_FILE_NAME:${TARGET}>.app/Contents/MacOS\")
+                endif()
                 set(OutName \"${info.projectName}-${info.versionString}-${CMAKE_SYSTEM_PROCESSOR}\")
                 execute_process(COMMAND \"${MACDEPLOYQT_EXECUTABLE}\" \"\$<TARGET_FILE_NAME:${TARGET}>.app\" -dmg -no-plugins ${SIGN_CMD} -appstore-compliant WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
                 file(RENAME \"${CMAKE_INSTALL_PREFIX}/\$<TARGET_FILE_NAME:${TARGET}>.dmg\" \"${CMAKE_INSTALL_PREFIX}/\${OutName}.dmg\")

@@ -1,8 +1,8 @@
 #include "AdvancedQmlApplicationEngine.h"
-#include "info.h"
 #include <QDir>
 #include <QFileSystemWatcher>
 #include <QIcon>
+#include <QJSValue>
 #include <QLoggingCategory>
 #include <QMetaObject>
 #include <QQmlComponent>
@@ -51,6 +51,22 @@ void AdvancedQmlApplicationEngine::loadRootItem(const QString &rootItem, bool us
 	qInfo(qmlengine) << "loading qml root item";
 	qInfo(qmlengine) << "qml import paths:" << importPathList();
 	qInfo(qmlengine) << "qml plugin paths:" << pluginPathList();
+
+	// Workaround: instanceOf does not work after qmlengine 'clearComponentCache' is called, which is used for hot reloading.
+	auto instanceOfFunc =
+	 evaluate("(function(one, two) { if(one && two) { return ''.concat('' + one).startsWith('' + two + '_'); } else { return false; } })",
+	          "HotReloadingWorkaround.js", 1);
+
+	Q_ASSERT(instanceOfFunc.isCallable());
+
+	globalObject().setProperty("instanceOf", instanceOfFunc);
+
+#ifdef QT_DEBUG
+	globalObject().setProperty("isDebug", QJSValue(true));
+#else
+	globalObject().setProperty("isDebug", QJSValue(false));
+#endif
+
 	if(qEnvironmentVariableIsSet("QML_DISK_CACHE_PATH")) {
 		qInfo(qmlengine) << "qml cache location (overwritten)" << qgetenv("QML_DISK_CACHE_PATH");
 	} else {
