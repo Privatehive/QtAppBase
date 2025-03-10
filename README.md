@@ -32,7 +32,7 @@
 
 ### Environment variables
 
-**Window Installer:**
+**Windows Installer:**
   * `WIN_CODESIGN_OPTIONS`: Options passed to [signtool](https://learn.microsoft.com/de-de/dotnet/framework/tools/signtool-exe#sign-command-options). Each option must be separated by a `;` e.g.: `/n;MyCodeSigningCert;/fd;SHA256;/t;http://timestamp.digicert.com`
 
 **macOS App package:**
