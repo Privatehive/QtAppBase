@@ -2,14 +2,19 @@
 <Installer>
     <Name>@info.projectName@</Name>
     <Version>@info.versionString@</Version>
-    <Title>@info.projectDescription@</Title>
+    <Title>@info.projectName@ Setup</Title>
     <Publisher>@info.vendor@</Publisher>
     <ProductUrl>@info.homepage@</ProductUrl>
     <StartMenuDir>@info.projectName@</StartMenuDir>
-    <TargetDir>@at@HomeDir@at@/@info.projectName@</TargetDir>
+    <TargetDir>@at@ApplicationsDirX64@at@/@info.projectName@</TargetDir>
     <RunProgram>@at@TargetDir@at@/@AppExecDir@/@AppExec@</RunProgram>
+    <SupportsModify>false</SupportsModify>
     <WizardShowPageList>false</WizardShowPageList>
     <AllowNonAsciiCharacters>true</AllowNonAsciiCharacters>
+    <AllowSpaceInPath>true</AllowSpaceInPath>
+    <PersistentLocalCache>false</PersistentLocalCache>
+    <RepositorySettingsPageVisible>false</RepositorySettingsPageVisible>
+    @AppControlScript@
     @AppIco@
     @AppWindowIcon@
 </Installer>

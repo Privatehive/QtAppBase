@@ -14,6 +14,7 @@ add_subdirectory(src)
 
 install(
         FILES
+        "${CMAKE_SOURCE_DIR}/CMake/Findsigntool.cmake"
         "${CMAKE_SOURCE_DIR}/CMake/JSONParser.cmake"
         "${CMAKE_SOURCE_DIR}/CMake/QtAppBase.cmake"
         "${CMAKE_SOURCE_DIR}/CMake/QtAppBaseCommon.cmake"
@@ -24,6 +25,7 @@ install(
         "${CMAKE_SOURCE_DIR}/CMake/QtIF.config.in"
         "${CMAKE_SOURCE_DIR}/CMake/QtIF.package.in"
         "${CMAKE_SOURCE_DIR}/CMake/QtIF.install.qs.in"
+        "${CMAKE_SOURCE_DIR}/CMake/QtIF.control.qs"
         "${CMAKE_SOURCE_DIR}/CMake/GetDependencies.cmake"
         "${CMAKE_SOURCE_DIR}/CMake/AndroidDeploy.cmake"
         "${CMAKE_SOURCE_DIR}/CMake/AndroidManifest.xml.in"

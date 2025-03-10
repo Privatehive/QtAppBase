@@ -407,7 +407,14 @@ function(register_aux_path TARGET)
 endfunction()
 
 # install a target and more (APKs on Android, AppImage on Linux)
+# QtIF options:
+#   QT_IF_CONTROL_SCRIPT
 function(install_app TARGET)
+
+    set(options)
+    set(oneValueArgs QT_IF_CONTROL_SCRIPT)
+    set(multiValueArgs)
+    cmake_parse_arguments(OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     message(STATUS "QtAppBase: Install app ${TARGET}")
 
@@ -492,8 +499,11 @@ function(install_app TARGET)
             #foreach (dep IN LISTS alldeps)
             #    install(IMPORTED_RUNTIME_ARTIFACTS ${dep} RUNTIME OPTIONAL)
             #endforeach ()
+            if(NOT DEFINED OPTIONS_QT_IF_CONTROL_SCRIPT)
+                set(OPTIONS_QT_IF_CONTROL_SCRIPT "${current_dir}/QtIF.control.qs")
+            endif()
             include(QtIF)
-            install_qtif(${TARGET})
+            install_qtif(${TARGET} ${OPTIONS_QT_IF_CONTROL_SCRIPT})
         elseif (APPLE)
             cmake_path(GET MACDEPLOYQT_EXECUTABLE PARENT_PATH QT_BIN_PATH)
             cmake_path(GET QT_BIN_PATH PARENT_PATH QT_ROOT_PATH)

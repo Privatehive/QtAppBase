@@ -26,9 +26,38 @@
 * `SecretsManager`
 * CMake based deployment for Android, Linux, Windows
     * Linux: AppImage
-    * Window: Installer
+    * Window: Installer (Qt Installer Framework)
     * macOS: App package
     * Android: APK, AAB
+
+### Environment variables
+
+**Window Installer:**
+  * `WIN_CODESIGN_OPTIONS`: Options passed to [signtool](https://learn.microsoft.com/de-de/dotnet/framework/tools/signtool-exe#sign-command-options). Each option must be separated by a `;` e.g.: `/n;MyCodeSigningCert;/fd;SHA256;/t;http://timestamp.digicert.com`
+
+**macOS App package:**
+  * `APPLE_CODESIGN_IDENTITY`: The identity used to sign the app: It's the 10 character long alpha numeric string of the Apple Developer cert found in the Keychain Access
+
+**Android APK/AAB:**
+
+The env vars are consumed by [androiddeployqt](https://doc.qt.io/qt-6/android-deploy-qt-tool.html#command-line-arguments)
+
+  * `QT_ANDROID_KEYSTORE_PATH`: The absolute path pointing to a .jks keystore file
+  * `QT_ANDROID_KEYSTORE_ALIAS`: The alias used for signing
+  * `QT_ANDROID_KEYSTORE_STORE_PASS`: The store password
+  * `QT_ANDROID_KEYSTORE_KEY_PASS`: The key password
+
+> [!TIP]
+> Declare the needed env vars in a **new** conan profile named e.g. `sign_env`:
+>
+> ```
+> [buildenv]
+> WIN_CODESIGN_OPTIONS=...
+> APPLE_CODESIGN_IDENTITY=...
+> ```
+>
+> Then pass the profile as a host profile to the conan command (multiple host profiles are allowed):
+> `conan create . -pr:h=sign_env ...`
 
 ### How to run on Raspberry Pi (EGLFS)
 

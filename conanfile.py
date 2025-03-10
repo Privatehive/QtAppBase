@@ -59,7 +59,7 @@ class QtAppBaseConan(ConanFile):
         if self.settings.os == "Linux":
             self.tool_requires("appimagetool/continuous@%s/stable" % self.user, visible=True)
         if self.settings.os == "Windows":
-            self.tool_requires("qtinstaller/4.8.0@%s/stable" % self.user, visible=True)
+            self.tool_requires("qtinstaller/4.8.1@%s/stable" % self.user, visible=True)
 
     def validate(self):
         valid_os = ["Windows", "Linux", "Android", "Macos"]
