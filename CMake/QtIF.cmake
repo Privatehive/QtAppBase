@@ -102,6 +102,22 @@ function(install_qtif TARGET QT_IF_CONTROL_SCRIPT)
         configure_file(\"${current_dir}/QtIF.package.in\" \"${CMAKE_INSTALL_PREFIX}/QtIF/packages/${info.package}/meta/package.xml\" @ONLY)
         configure_file(\"${current_dir}/QtIF.install.qs.in\" \"${CMAKE_INSTALL_PREFIX}/QtIF/packages/${info.package}/meta/QtIF.install.qs\" @ONLY)
 
+        # Check if we find the msvc runtime installer vc_redist.x64.exe
+        file(GLOB vc_redist LIST_DIRECTORIES false RELATIVE \"${CMAKE_INSTALL_FULL_BINDIR}\" \"${CMAKE_INSTALL_FULL_BINDIR}/vc_redist.*.exe\")
+        if(vc_redist)
+            # Make a dedicated QtIF package for the vc_redist
+            message(STATUS \"QtAppBase: Found \${vc_redist}. Creating a dedicated QtIf package.\")
+            file(MAKE_DIRECTORY
+            \"${CMAKE_INSTALL_PREFIX}/QtIF/packages/com.microsoft.vcredist\"
+            \"${CMAKE_INSTALL_PREFIX}/QtIF/packages/com.microsoft.vcredist/data\"
+            \"${CMAKE_INSTALL_PREFIX}/QtIF/packages/com.microsoft.vcredist/meta\"
+            \"${CMAKE_INSTALL_PREFIX}/vcredist\")
+            configure_file(\"${current_dir}/QtIF.vcredist.package.in\" \"${CMAKE_INSTALL_PREFIX}/QtIF/packages/com.microsoft.vcredist/meta/package.xml\" @ONLY)
+            configure_file(\"${current_dir}/QtIF.vcredist.install.qs.in\" \"${CMAKE_INSTALL_PREFIX}/QtIF/packages/com.microsoft.vcredist/meta/QtIF.vcredist.install.qs\" @ONLY)
+            file(RENAME \"${CMAKE_INSTALL_FULL_BINDIR}/\${vc_redist}\" \"${CMAKE_INSTALL_PREFIX}/vcredist/\${vc_redist}\")
+            execute_process(COMMAND ${ARCHIVEGEN_TOOL} -f 7z -c 5 \"QtIF/packages/com.microsoft.vcredist/data/vcredist\" vcredist WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
+        endif()
+
         if(EXISTS \"${CMAKE_INSTALL_FULL_BINDIR}\")
             sign_dir_content(\"${CMAKE_INSTALL_FULL_BINDIR}\")
             execute_process(COMMAND ${ARCHIVEGEN_TOOL} -f 7z -c 5 \"QtIF/packages/${info.package}/data/${CMAKE_INSTALL_BINDIR}\" \"${CMAKE_INSTALL_BINDIR}\" WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
