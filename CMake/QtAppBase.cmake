@@ -408,10 +408,12 @@ endfunction()
 
 # install a target and more (APKs on Android, AppImage on Linux)
 # QtIF options:
-#   QT_IF_CONTROL_SCRIPT
+#   QT_IF_CONTROL_SCRIPT <abs path of control script>
+# Macos App package:
+#   APPLE_DEEP_CODESIGN
 function(install_app TARGET)
 
-    set(options)
+    set(options APPLE_DEEP_CODESIGN)
     set(oneValueArgs QT_IF_CONTROL_SCRIPT)
     set(multiValueArgs)
     cmake_parse_arguments(OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -509,6 +511,10 @@ function(install_app TARGET)
             cmake_path(GET QT_BIN_PATH PARENT_PATH QT_ROOT_PATH)
             set(SIGN_CMD "")
             if(DEFINED ENV{APPLE_CODESIGN_IDENTITY})
+                if(OPTIONS_APPLE_DEEP_CODESIGN)
+                    message(WARNING "QtAppBase: signing app with 'codesign --deep' option which is discuraged")
+                    file(GENERATE OUTPUT "${PROJECT_BINARY_DIR}/.qtappbase/sign_workaround/codesign" CONTENT "#!/bin/bash\n/usr/bin/codesign --deep \"$@\"\n" FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE NEWLINE_STYLE UNIX)
+                endif()
                 message(STATUS "QtAppBase: signing app using identity $ENV{APPLE_CODESIGN_IDENTITY}")
                 set(SIGN_CMD "-sign-for-notarization=$ENV{APPLE_CODESIGN_IDENTITY}")
             endif()
@@ -525,6 +531,9 @@ function(install_app TARGET)
                     file(COPY \"${CMAKE_INSTALL_FULL_DATADIR}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/\$<TARGET_FILE_NAME:${TARGET}>.app/Contents/MacOS\")
                 endif()
                 set(OutName \"${info.projectName}-${info.versionString}-${CMAKE_SYSTEM_PROCESSOR}\")
+                if(EXISTS \"${PROJECT_BINARY_DIR}/.qtappbase/sign_workaround/codesign\")
+                    set(ENV{PATH} \"${PROJECT_BINARY_DIR}/.qtappbase/sign_workaround:\$ENV{PATH}\")
+                endif()
                 execute_process(COMMAND \"${MACDEPLOYQT_EXECUTABLE}\" \"\$<TARGET_FILE_NAME:${TARGET}>.app\" -dmg -no-plugins ${SIGN_CMD} -appstore-compliant WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}\" COMMAND_ERROR_IS_FATAL ANY)
                 file(RENAME \"${CMAKE_INSTALL_PREFIX}/\$<TARGET_FILE_NAME:${TARGET}>.dmg\" \"${CMAKE_INSTALL_PREFIX}/\${OutName}.dmg\")
             ")
