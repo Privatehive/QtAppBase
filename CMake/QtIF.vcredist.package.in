@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>MSVC Redistributable</DisplayName>
+    <Description>The Visual C++ Redistributable installs Microsoft C and C++ (MSVC) runtime libraries</Description>
+    <Version>2015-2022</Version>
+    <ReleaseDate>@TODAY@</ReleaseDate>
+    <Default>true</Default>
+    <Script>QtIF.vcredist.install.qs</Script>
+</Package>

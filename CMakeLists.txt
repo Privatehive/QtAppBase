@@ -26,6 +26,8 @@ install(
         "${CMAKE_SOURCE_DIR}/CMake/QtIF.package.in"
         "${CMAKE_SOURCE_DIR}/CMake/QtIF.install.qs.in"
         "${CMAKE_SOURCE_DIR}/CMake/QtIF.control.qs"
+        "${CMAKE_SOURCE_DIR}/CMake/QtIF.vcredist.package.in"
+        "${CMAKE_SOURCE_DIR}/CMake/QtIF.vcredist.install.qs.in"
         "${CMAKE_SOURCE_DIR}/CMake/GetDependencies.cmake"
         "${CMAKE_SOURCE_DIR}/CMake/AndroidDeploy.cmake"
         "${CMAKE_SOURCE_DIR}/CMake/AndroidManifest.xml.in"

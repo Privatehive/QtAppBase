@@ -1,7 +1,4 @@
-function Component()
-{
-    // default constructor
-}
+function Component() {}
 
 Component.prototype.createOperations = function()
 {

@@ -1,0 +1,18 @@
+function Component() {
+
+    if (systemInfo.productType === "windows") {
+        installer.installationFinished.connect(this, Component.prototype.installVCRedist);
+    }
+}
+
+Component.prototype.installVCRedist = function() {
+
+    if (component.isInstalled()) {
+        var vcredist = installer.value("TargetDir") + "/vcredist/@vc_redist@";
+        console.log("Starting vcredist installer " + vcredist);
+        result = installer.execute(vcredist, ["/install", "/passive"]);
+        if (result.length === 0) {
+            QMessageBox.critical("vcredist.error", "Installing vcredist", "Failed to start vcredist installer. Please run it yourself from here: \"" + vcredist + "\"", QMessageBox.Ok);
+        }
+    }
+}
