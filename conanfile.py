@@ -70,15 +70,16 @@ class QtAppBaseConan(ConanFile):
         if str(self.settings.arch) not in valid_arch:
             raise ConanInvalidConfiguration(
                 f"{self.name} {self.version} is only supported for the following architectures on {self.settings.os}: {valid_arch}")
-        if not self.dependencies["qt"].options.qtbase:
-            raise ConanInvalidConfiguration("qt qtbase options is required")
-        if self.options.qml:
-            if not self.dependencies["qt"].options.GUI:
-                raise ConanInvalidConfiguration("qt GUI options is required")
-            if not self.dependencies["qt"].options.qtdeclarative:
-                raise ConanInvalidConfiguration("qt qtdeclarative options is required")
-            if self.dependencies["qt"].options.opengl == "no":
-                raise ConanInvalidConfiguration("qt opengl options must contain a value != no")
+        if self.dependencies["qt"].options.get_safe("config", "none") != 'host':
+            if not self.dependencies["qt"].options.qtbase:
+                raise ConanInvalidConfiguration("qt qtbase options is required")
+            if self.options.qml:
+                if not self.dependencies["qt"].options:
+                    raise ConanInvalidConfiguration("qt GUI options is required")
+                if not self.dependencies["qt"].options.qtdeclarative:
+                    raise ConanInvalidConfiguration("qt qtdeclarative options is required")
+                if self.dependencies["qt"].options.opengl == "no":
+                    raise ConanInvalidConfiguration("qt opengl options must contain a value != no")
 
     def configure(self):
         if self.options.secretsManager:
