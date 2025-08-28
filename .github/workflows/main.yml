@@ -6,70 +6,114 @@ jobs:
     name: "Linux"
     uses: Privatehive/conan-workflows/.github/workflows/createPackage.yml@master
     with:
-      image: "ubuntu-20.04"
+      name: "x86_64"
+      image: "ubuntu-22.04"
       conan_remotes: https://conan.privatehive.de/artifactory/api/conan/public-conan
-      conan_options: "qtappbase/*:secretsManager=True,qtappbase/*:qml=True"
+      conan_options: "qtappbase/*:qml=True,qtappbase/*:secretsManager=True"
 
   build_windows_x86_64:
     name: "Windows"
     uses: Privatehive/conan-workflows/.github/workflows/createPackage.yml@master
     with:
+      name: "x86_64"
       image: "windows-2022"
-      conan_host_profile: "windowsMinGW"
+      conan_host_profile_path: "windowsMinGW.host.profile"
+      conan_build_profile_path: "windowsMinGW.build.profile"
       conan_remotes: https://conan.privatehive.de/artifactory/api/conan/public-conan
-      conan_options: "qtappbase/*:secretsManager=True,qtappbase/*:qml=True"
+      conan_options: "qtappbase/*:qml=True,qtappbase/*:secretsManager=True"
 
   build_macos_armv8:
     name: "Macos"
     uses: Privatehive/conan-workflows/.github/workflows/createPackage.yml@master
     with:
-      image: "macos-14"
+      name: "armv8"
+      image: "macos-15"
       conan_remotes: https://conan.privatehive.de/artifactory/api/conan/public-conan
-      conan_options: "qtappbase/*:secretsManager=True,qtappbase/*:qml=True"
+      conan_options: "qtappbase/*:qml=True,qtappbase/*:secretsManager=True"
+
+  build_linux_qt_host:
+    name: "Linux Qt Host"
+    uses: Privatehive/conan-workflows/.github/workflows/createPackage.yml@master
+    with:
+      name: "x86_64"
+      image: "ubuntu-22.04"
+      conan_remotes: https://conan.privatehive.de/artifactory/api/conan/public-conan
+      conan_options: "qt/*:config=host"
+      export_conan_cache: true
+
+  build_linux_rpi_armv6:
+    name: "Linux (Raspberry Pi)"
+    uses: Privatehive/conan-workflows/.github/workflows/createPackage.yml@master
+    needs: [ build_linux_qt_host ]
+    if: ${{ success() }}
+    with:
+      name: "armv6"
+      image: "ubuntu-22.04"
+      conan_host_profile_path: "raspberrypiosArmv6.host.profile"
+      conan_remotes: https://conan.privatehive.de/artifactory/api/conan/public-conan
+      conan_options: "qtappbase/*:qml=True,qtappbase/*:secretsManager=True"
+      import_conan_cache: true
 
   build_android_x86:
     name: "Android"
-    uses: Privatehive/conan-workflows/.github/workflows/createPackageGcpRunner.yml@master
+    uses: Privatehive/conan-workflows/.github/workflows/createPackage.yml@master
+    needs: [ build_linux_qt_host ]
+    if: ${{ success() }}
     with:
-      docker_image: "ghcr.io/privatehive/conan-ubuntu:latest"
-      machine_type: c2d-standard-8
-      conan_host_profile: "androidx86"
+      name: "x86"
+      image: "ubuntu-22.04"
+      conan_host_profile_path: "androidx86.host.profile"
+      conan_build_profile_path: "android.build.profile"
       conan_remotes: https://conan.privatehive.de/artifactory/api/conan/public-conan
+      conan_options: "qtappbase/*:qml=True,qtappbase/*:secretsManager=True"
+      import_conan_cache: true
 
   build_android_x86_64:
     name: "Android"
-    uses: Privatehive/conan-workflows/.github/workflows/createPackageGcpRunner.yml@master
+    uses: Privatehive/conan-workflows/.github/workflows/createPackage.yml@master
+    needs: [ build_linux_qt_host ]
+    if: ${{ success() }}
     with:
-      docker_image: "ghcr.io/privatehive/conan-ubuntu:latest"
-      machine_type: c2d-standard-8
-      conan_host_profile: "androidx86_64"
+      name: "x86_64"
+      image: "ubuntu-22.04"
+      conan_host_profile_path: "androidx86_64.host.profile"
+      conan_build_profile_path: "android.build.profile"
       conan_remotes: https://conan.privatehive.de/artifactory/api/conan/public-conan
-      conan_options: "qtappbase/*:secretsManager=True,qtappbase/*:qml=True"
+      conan_options: "qtappbase/*:qml=True,qtappbase/*:secretsManager=True"
+      import_conan_cache: true
 
   build_android_armv7:
     name: "Android"
-    uses: Privatehive/conan-workflows/.github/workflows/createPackageGcpRunner.yml@master
+    uses: Privatehive/conan-workflows/.github/workflows/createPackage.yml@master
+    needs: [ build_linux_qt_host ]
+    if: ${{ success() }}
     with:
-      docker_image: "ghcr.io/privatehive/conan-ubuntu:latest"
-      machine_type: c2d-standard-8
-      conan_host_profile: "androidArmv7"
+      name: "armv7"
+      image: "ubuntu-22.04"
+      conan_host_profile_path: "androidArmv7.host.profile"
+      conan_build_profile_path: "android.build.profile"
       conan_remotes: https://conan.privatehive.de/artifactory/api/conan/public-conan
-      conan_options: "qtappbase/*:secretsManager=True,qtappbase/*:qml=True"
+      conan_options: "qtappbase/*:qml=True,qtappbase/*:secretsManager=True"
+      import_conan_cache: true
 
   build_android_armv8:
     name: "Android"
-    uses: Privatehive/conan-workflows/.github/workflows/createPackageGcpRunner.yml@master
+    uses: Privatehive/conan-workflows/.github/workflows/createPackage.yml@master
+    needs: [ build_linux_qt_host ]
+    if: ${{ success() }}
     with:
-      docker_image: "ghcr.io/privatehive/conan-ubuntu:latest"
-      machine_type: c2d-standard-8
-      conan_host_profile: "androidArmv8"
+      name: "armv8"
+      image: "ubuntu-22.04"
+      conan_host_profile_path: "androidArmv8.host.profile"
+      conan_build_profile_path: "android.build.profile"
       conan_remotes: https://conan.privatehive.de/artifactory/api/conan/public-conan
-      conan_options: "qtappbase/*:secretsManager=True,qtappbase/*:qml=True"
+      conan_options: "qtappbase/*:qml=True,qtappbase/*:secretsManager=True"
+      import_conan_cache: true
 
   upload_recipe:
     name: "Finalize"
     uses: Privatehive/conan-workflows/.github/workflows/uploadRecipe.yml@master
-    needs: [ build_linux_x86_64, build_windows_x86_64, build_macos_armv8, build_android_x86, build_android_x86_64, build_android_armv7, build_android_armv8 ]
+    needs: [ build_linux_x86_64, build_windows_x86_64, build_macos_armv8, build_linux_rpi_armv6, build_android_x86, build_android_x86_64, build_android_armv7, build_android_armv8 ]
     if: ${{ success() }}
     secrets: inherit
     with:
