@@ -78,6 +78,8 @@ class QtAppBaseConan(ConanFile):
                     raise ConanInvalidConfiguration("qt GUI options is required")
                 if not self.dependencies["qt"].options.qtdeclarative:
                     raise ConanInvalidConfiguration("qt qtdeclarative options is required")
+                if not self.dependencies["qt"].options.qtshadertools:
+                    raise ConanInvalidConfiguration("qt qtshadertools options is required")
                 if self.dependencies["qt"].options.opengl == "no":
                     raise ConanInvalidConfiguration("qt opengl options must contain a value != no")
 
@@ -89,6 +91,7 @@ class QtAppBaseConan(ConanFile):
                 self.options["qt"].dbus = True
         if self.options.qml:
             self.options["qt"].GUI = True
+            self.options["qt"].qtshadertools = True
             self.options["qt"].qtdeclarative = True
             self.options["qt"].opengl = "desktop"
 
