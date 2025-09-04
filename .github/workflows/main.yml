@@ -7,7 +7,7 @@ jobs:
     uses: Privatehive/conan-workflows/.github/workflows/createPackage.yml@master
     with:
       name: "x86_64"
-      image: "ubuntu-20.04"
+      image: "ubuntu-22.04"
       conan_remotes: https://conan.privatehive.de/artifactory/api/conan/public-conan
       conan_options: "qtappbase/*:secretsManager=True,qtappbase/*:qml=True,qtappbase/*:asyncFuture=True,qtappbase/*:resultType=True"
 
