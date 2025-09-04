@@ -13,6 +13,7 @@
             android:smallScreens="true"/>
     <application
             android:name="org.qtproject.qt.android.bindings.QtApplication"
+            @MANIFEST_ICON@
             android:hardwareAccelerated="true"
             android:label="-- %%INSERT_APP_NAME%% --"
             android:requestLegacyExternalStorage="true"

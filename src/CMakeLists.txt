@@ -3,6 +3,9 @@ include(GenerateExportHeader)
 set(FEATURE_TEST_APP OFF CACHE BOOL "Build a test app")
 set(FEATURE_SECRETS_MANAGER OFF CACHE BOOL "Enables access to the OS secret manager, or a generic one if the OS doesn't provide one")
 set(FEATURE_QML OFF CACHE BOOL "Expose features to Qml")
+set(FEATURE_ASYNC_FUTURE OFF CACHE BOOL "Include AsyncFuture and QuickFuture (only if FEATURE_QML is enabled)")
+set(FEATURE_RESULT_TYPE OFF CACHE BOOL "Include a Result type")
+set(FEATURE_MOBILE_UI OFF CACHE BOOL "Include MobileUI")
 
 find_package(Qt6 REQUIRED COMPONENTS Core)
 
@@ -19,6 +22,19 @@ target_mark_public_header(QtAppBase
         QtApplicationBase.h
         ${CMAKE_CURRENT_BINARY_DIR}/QtApplicationBaseExport.h
 )
+
+if (FEATURE_RESULT_TYPE)
+    target_sources(QtAppBase
+            PRIVATE
+            Result.h
+            Result.cpp
+    )
+
+    target_mark_public_header(QtAppBase
+            Result.h
+            Result
+    )
+endif ()
 
 target_link_libraries(QtAppBase PUBLIC Qt6::Core)
 target_include_directories(QtAppBase PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> $<INSTALL_INTERFACE:include>)
@@ -38,6 +54,25 @@ if (FEATURE_QML)
     )
 
     target_link_libraries(QtAppBase PUBLIC Qt6::Quick PUBLIC Qt6::Qml)
+endif ()
+
+if (FEATURE_ASYNC_FUTURE)
+
+    message(STATUS "Enabled AsyncFuture")
+
+    target_mark_public_header(QtAppBase
+            AsyncFuture/asyncfuture.h
+            AsyncFuture/AsyncFuture
+    )
+
+    if (FEATURE_QML)
+        message(STATUS "Enabled Future QML integration (a.k.a. QuickFuture)")
+        add_subdirectory(QuickFuture)
+    endif ()
+endif ()
+
+if (FEATURE_MOBILE_UI)
+    add_subdirectory(MobileUI)
 endif ()
 
 if (FEATURE_SECRETS_MANAGER)

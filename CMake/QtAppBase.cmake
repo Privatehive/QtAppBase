@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.21.1)
+if (POLICY CMP0177)
+    cmake_policy(SET CMP0177 NEW)
+endif ()
 set(current_dir ${CMAKE_CURRENT_LIST_DIR})
 
 macro(register_target_properties)
@@ -372,18 +375,19 @@ function(register_file_extension TARGET)
     set_target_properties(${TARGET} PROPERTIES APPBASE_ASSOCIATED_EXTENSIONS "${file_extensions}")
 endfunction()
 
-# register_icon(target [SCALABLE svg_image] [ICO ico_image] [ICNS ICNS_image [1024x1024 png_image] [512x512 png_image] [256x256 png_image] [128x128 png_image] [64x64 png_image] [48x48 png_image] [32x32 png_image] [16x16 png_image])
+# register_icon(target [SCALABLE svg_image] [DRAWABLE_FG drawable_image] [DRAWABLE_FG_MONO drawable_image] [DRAWABLE_BG drawable_image] [ICO ico_image] [ICNS ICNS_image] [1024x1024 png_image] [512x512 png_image] [256x256 png_image] [128x128 png_image] [64x64 png_image] [48x48 png_image] [32x32 png_image] [16x16 png_image])
 # supported image types:
+# Android: DRAWABLE_FG, (optional) DRAWABLE_FG_MONO, DRAWABLE_BG
 # Linux: PNG, XPM, SVG
 # Windows: ICO
 # Macos: ICNS (use https://github.com/alptugan/icns-creator)
 function(register_icon TARGET)
 
     set(options)
-    set(oneValueArgs SCALABLE ICO ICNS 1024x1024 512x512 256x256 128x128 64x64 48x48 32x32 16x16)
+    set(oneValueArgs SCALABLE DRAWABLE_FG DRAWABLE_FG_MONO DRAWABLE_BG ICO ICNS 1024x1024 512x512 256x256 128x128 64x64 48x48 32x32 16x16)
     set(multiValueArgs)
     cmake_parse_arguments(OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    set(icons "scalable^_${OPTIONS_SCALABLE}^^ico^_${OPTIONS_ICO}^^icns^_${OPTIONS_ICNS}^^1024x1024^_${OPTIONS_1024x1024}^^512x512^_${OPTIONS_512x512}^^256x256^_${OPTIONS_256x256}^^128x128^_${OPTIONS_128x128}^^64x64^_${OPTIONS_64x64}^^48x48^_${OPTIONS_48x48}^^32x32^_${OPTIONS_32x32}^^16x16^_${OPTIONS_16x16}")
+    set(icons "scalable^_${OPTIONS_SCALABLE}^^drawable_fg^_${OPTIONS_DRAWABLE_FG}^^drawable_fg_mono^_${OPTIONS_DRAWABLE_FG_MONO}^^drawable_bg^_${OPTIONS_DRAWABLE_BG}^^ico^_${OPTIONS_ICO}^^icns^_${OPTIONS_ICNS}^^1024x1024^_${OPTIONS_1024x1024}^^512x512^_${OPTIONS_512x512}^^256x256^_${OPTIONS_256x256}^^128x128^_${OPTIONS_128x128}^^64x64^_${OPTIONS_64x64}^^48x48^_${OPTIONS_48x48}^^32x32^_${OPTIONS_32x32}^^16x16^_${OPTIONS_16x16}")
     set_target_properties(${TARGET} PROPERTIES APPBASE_ICON "${icons}")
 endfunction()
 
@@ -407,6 +411,8 @@ function(register_aux_path TARGET)
 endfunction()
 
 # install a target and more (APKs on Android, AppImage on Linux)
+# Android  options:
+#
 # QtIF options:
 #   QT_IF_CONTROL_SCRIPT <abs path of control script>
 # Macos App package:
@@ -414,7 +420,7 @@ endfunction()
 function(install_app TARGET)
 
     set(options APPLE_DEEP_CODESIGN)
-    set(oneValueArgs QT_IF_CONTROL_SCRIPT)
+    set(oneValueArgs QT_IF_CONTROL_SCRIPT ANDROID_PACKAGE_SOURCE_DIR)
     set(multiValueArgs)
     cmake_parse_arguments(OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -427,24 +433,25 @@ function(install_app TARGET)
         set_target_properties(${TARGET} PROPERTIES MACOSX_BUNDLE_GUI_IDENTIFIER "${info.package}")
         set_target_properties(${TARGET} PROPERTIES MACOSX_BUNDLE_INFO_STRING "${info.description}")
         get_target_icon(${TARGET} ICNS ICNS_ICON)
-        if(ICNS_ICON)
+        if (ICNS_ICON)
             get_filename_component(ICO_ICON_NAME "${ICNS_ICON}" NAME)
             set_target_properties(${TARGET} PROPERTIES MACOSX_BUNDLE_ICON_FILE "${ICO_ICON_NAME}")
             install(FILES "${ICNS_ICON}" DESTINATION "$<TARGET_FILE_NAME:${TARGET}>.app/Contents/Resources")
-        endif()
+        endif ()
     endif ()
 
     install(TARGETS ${TARGET} RUNTIME_DEPENDENCY_SET ${TARGET}runtime_set BUNDLE DESTINATION . LIBRARY DESTINATION ${CMAKE_INSTALL_BINDIR} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
     if (ANDROID)
         include(AndroidDeploy)
-        install_android(${TARGET})
+        install_android(${TARGET} ANDROID_PACKAGE_SOURCE_DIR "${OPTIONS_ANDROID_PACKAGE_SOURCE_DIR}")
     else ()
         if (Qt6Qml_DIR)
             qt_generate_deploy_qml_app_script(
                     TARGET ${TARGET}
                     OUTPUT_SCRIPT ${TARGET}_install_app_deploy_script
                     NO_UNSUPPORTED_PLATFORM_ERROR
+                    DEPLOY_USER_QML_MODULES_ON_UNSUPPORTED_PLATFORM
             )
         else ()
             qt_generate_deploy_app_script(
@@ -501,31 +508,31 @@ function(install_app TARGET)
             #foreach (dep IN LISTS alldeps)
             #    install(IMPORTED_RUNTIME_ARTIFACTS ${dep} RUNTIME OPTIONAL)
             #endforeach ()
-            if(NOT DEFINED OPTIONS_QT_IF_CONTROL_SCRIPT)
+            if (NOT DEFINED OPTIONS_QT_IF_CONTROL_SCRIPT)
                 set(OPTIONS_QT_IF_CONTROL_SCRIPT "${current_dir}/QtIF.control.qs")
-            endif()
+            endif ()
             include(QtIF)
             install_qtif(${TARGET} ${OPTIONS_QT_IF_CONTROL_SCRIPT})
         elseif (APPLE)
             cmake_path(GET MACDEPLOYQT_EXECUTABLE PARENT_PATH QT_BIN_PATH)
             cmake_path(GET QT_BIN_PATH PARENT_PATH QT_ROOT_PATH)
             set(SIGN_CMD "")
-            if(DEFINED ENV{APPLE_CODESIGN_IDENTITY})
-                if(OPTIONS_APPLE_DEEP_CODESIGN)
+            if (DEFINED ENV{APPLE_CODESIGN_IDENTITY})
+                if (OPTIONS_APPLE_DEEP_CODESIGN)
                     message(WARNING "QtAppBase: signing app with 'codesign --deep' option which is discuraged")
                     file(GENERATE OUTPUT "${PROJECT_BINARY_DIR}/.qtappbase/sign_workaround/codesign" CONTENT "#!/bin/bash\n/usr/bin/codesign --deep \"$@\"\n" FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE NEWLINE_STYLE UNIX)
-                endif()
+                endif ()
                 message(STATUS "QtAppBase: signing app using identity $ENV{APPLE_CODESIGN_IDENTITY}")
                 set(SIGN_CMD "-sign-for-notarization=$ENV{APPLE_CODESIGN_IDENTITY}")
-            endif()
+            endif ()
             install(RUNTIME_DEPENDENCY_SET ${TARGET}runtime_set
-                DESTINATION
-                "$<TARGET_FILE_NAME:${TARGET}>.app/Contents/Frameworks"
-                PRE_EXCLUDE_REGEXES
-                Qt.*\.framework
-                POST_EXCLUDE_REGEXES
-                "${QT_ROOT_PATH}/.*"
-                DIRECTORIES ${CONAN_RUNTIME_LIB_DIRS})
+                    DESTINATION
+                    "$<TARGET_FILE_NAME:${TARGET}>.app/Contents/Frameworks"
+                    PRE_EXCLUDE_REGEXES
+                    Qt.*\.framework
+                    POST_EXCLUDE_REGEXES
+                    "${QT_ROOT_PATH}/.*"
+                    DIRECTORIES ${CONAN_RUNTIME_LIB_DIRS})
             install(CODE "
                 if(EXISTS \"${CMAKE_INSTALL_FULL_DATADIR}\")
                     file(COPY \"${CMAKE_INSTALL_FULL_DATADIR}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}/\$<TARGET_FILE_NAME:${TARGET}>.app/Contents/MacOS\")
@@ -560,6 +567,7 @@ function(add_qml_import_path TARGET importPath)
 endfunction()
 
 # The MODULE_TARGET has to be installed using install_qml_module(). It won't work otherwise
+# This function call must be declared in the same file where 'qt_add_qml_module' of TARGET was invoked
 function(target_link_qml_module TARGET visibility MODULE_TARGET)
 
     set(qml_import_paths "")
