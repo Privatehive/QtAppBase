@@ -18,6 +18,8 @@ find_package(Qt6 REQUIRED COMPONENTS Core Qml)
 qt_add_qml_module(
         QuickFuture
 
+        VERSION 1.0
+
         NO_PLUGIN
 
         URI

@@ -1,5 +1,5 @@
-#include <QtQml>
 #include <QQmlComponent>
+#include <QtQml>
 
 #include "qffuture.h"
 #include "quickfuture.h"
@@ -48,7 +48,7 @@ void Future::setEngine(QQmlEngine *engine) {
 	              "import QuickFuture 1.0\n"
 	              "QtObject { \n"
 	              "function create(future) {\n"
-	              "    var promise = Q.promise();\n"
+	              "    var promise = Promise.promise();\n"
 	              "    Future.onFinished(future, function(value) {\n"
 	              "        if (Future.isCanceled(future)) {\n"
 	              "            promise.reject();\n"

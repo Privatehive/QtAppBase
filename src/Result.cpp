@@ -58,6 +58,8 @@ const Result Result::UNAVAILABLE(RESULT_UNAVAILABLE, QObject::tr("The service is
 const Result Result::DATA_LOSS(RESULT_DATA_LOSS, QObject::tr("Unrecoverable data loss or corruption"));
 const Result Result::UNAUTHENTICATED(RESULT_UNAUTHENTICATED,
                                      QObject::tr("The request does not have valid authentication credentials for the operation"));
+const Result Result::QML_ERROR(RESULT_QML_ERROR, QObject::tr("The QML component contains error(s)"));
+
 
 Q_DECLARE_METATYPE(Result)
 Q_DECLARE_METATYPE(QFuture<Result>)

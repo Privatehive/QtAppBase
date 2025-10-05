@@ -25,6 +25,7 @@ class QTAPPBASE_EXPORT Result {
 		RESULT_UNAVAILABLE = 14,
 		RESULT_DATA_LOSS = 15,
 		RESULT_UNAUTHENTICATED = 16,
+		RESULT_QML_ERROR = 17,
 	};
 	Q_ENUM(StatusCode)
 
@@ -35,7 +36,7 @@ class QTAPPBASE_EXPORT Result {
 	Q_INVOKABLE inline bool isFault() const { return mStatusCode != RESULT_OK; }
 	inline bool operator==(const Result &rOther) const { return mStatusCode == rOther.mStatusCode; }
 	inline bool operator!=(const Result &rOther) const { return mStatusCode != rOther.mStatusCode; }
-	inline StatusCode getStatusCode() const { return mStatusCode; }
+	Q_INVOKABLE inline StatusCode getStatusCode() const { return mStatusCode; }
 	inline void setStatusCode(StatusCode code) { mStatusCode = code; }
 	Q_INVOKABLE inline QString getLabel() const { return mLabel; }
 	Q_INVOKABLE inline QString getDetails() const { return mDetails; }
@@ -62,6 +63,7 @@ class QTAPPBASE_EXPORT Result {
 	const static Result UNAVAILABLE;
 	const static Result DATA_LOSS;
 	const static Result UNAUTHENTICATED;
+	const static Result QML_ERROR;
 
  private:
 	Result(StatusCode value, const QString &rLabel);
