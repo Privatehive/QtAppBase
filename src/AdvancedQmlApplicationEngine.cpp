@@ -92,6 +92,7 @@ void AdvancedQmlApplicationEngine::loadRootItem(const QUrl &rootItem, bool useQu
 	if(useQuickView) {
 		// QWindow window;
 		mpView = new QQuickView(this, nullptr);
+		globalObject().setProperty("quickview", newQObject(mpView));
 		mpView->setResizeMode(QQuickView::SizeRootObjectToView);
 		mpView->setSource(rootItem);
 		if(!mpView->rootObject()) {

@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.21.1)
+
 if (POLICY CMP0177)
     cmake_policy(SET CMP0177 NEW)
 endif ()
@@ -375,19 +376,19 @@ function(register_file_extension TARGET)
     set_target_properties(${TARGET} PROPERTIES APPBASE_ASSOCIATED_EXTENSIONS "${file_extensions}")
 endfunction()
 
-# register_icon(target [SCALABLE svg_image] [DRAWABLE_FG drawable_image] [DRAWABLE_FG_MONO drawable_image] [DRAWABLE_BG drawable_image] [ICO ico_image] [ICNS ICNS_image] [1024x1024 png_image] [512x512 png_image] [256x256 png_image] [128x128 png_image] [64x64 png_image] [48x48 png_image] [32x32 png_image] [16x16 png_image])
+# register_icon(target [SCALABLE svg_image] [MIPMAPS_FOLDER mipmaps_folder] [ICO ico_image] [ICNS ICNS_image] [1024x1024 png_image] [512x512 png_image] [256x256 png_image] [128x128 png_image] [64x64 png_image] [48x48 png_image] [32x32 png_image] [16x16 png_image])
 # supported image types:
-# Android: DRAWABLE_FG, (optional) DRAWABLE_FG_MONO, DRAWABLE_BG
+# Android: MIPMAPS_FOLDER (a folder containing the following subfolders containing the icons: mipmap-hdpi, mipmap-mdpi, mipmap-xhdpi, mipmap-xxhdpi, mipmap-xxxhdpi, mipmap-anydpi-v26)
 # Linux: PNG, XPM, SVG
 # Windows: ICO
 # Macos: ICNS (use https://github.com/alptugan/icns-creator)
 function(register_icon TARGET)
 
     set(options)
-    set(oneValueArgs SCALABLE DRAWABLE_FG DRAWABLE_FG_MONO DRAWABLE_BG ICO ICNS 1024x1024 512x512 256x256 128x128 64x64 48x48 32x32 16x16)
+    set(oneValueArgs SCALABLE MIPMAPS_FOLDER ICO ICNS 1024x1024 512x512 256x256 128x128 64x64 48x48 32x32 16x16)
     set(multiValueArgs)
     cmake_parse_arguments(OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    set(icons "scalable^_${OPTIONS_SCALABLE}^^drawable_fg^_${OPTIONS_DRAWABLE_FG}^^drawable_fg_mono^_${OPTIONS_DRAWABLE_FG_MONO}^^drawable_bg^_${OPTIONS_DRAWABLE_BG}^^ico^_${OPTIONS_ICO}^^icns^_${OPTIONS_ICNS}^^1024x1024^_${OPTIONS_1024x1024}^^512x512^_${OPTIONS_512x512}^^256x256^_${OPTIONS_256x256}^^128x128^_${OPTIONS_128x128}^^64x64^_${OPTIONS_64x64}^^48x48^_${OPTIONS_48x48}^^32x32^_${OPTIONS_32x32}^^16x16^_${OPTIONS_16x16}")
+    set(icons "scalable^_${OPTIONS_SCALABLE}^^mipmaps_folder^_${OPTIONS_MIPMAPS_FOLDER}^^ico^_${OPTIONS_ICO}^^icns^_${OPTIONS_ICNS}^^1024x1024^_${OPTIONS_1024x1024}^^512x512^_${OPTIONS_512x512}^^256x256^_${OPTIONS_256x256}^^128x128^_${OPTIONS_128x128}^^64x64^_${OPTIONS_64x64}^^48x48^_${OPTIONS_48x48}^^32x32^_${OPTIONS_32x32}^^16x16^_${OPTIONS_16x16}")
     set_target_properties(${TARGET} PROPERTIES APPBASE_ICON "${icons}")
 endfunction()
 

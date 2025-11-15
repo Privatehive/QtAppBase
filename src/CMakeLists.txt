@@ -137,12 +137,14 @@ if (FEATURE_TEST_APP AND FEATURE_QML)
     register_icon(QtAppBaseTestApp
             ICO "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase.ico"
             ICNS "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase.icns"
-            512x512 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase512.png"
-            256x256 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase256.png"
-            128x128 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase128.png"
-            64x64 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase64.png"
-            48x48 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase48.png"
-            32x32 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase32.png"
+            SCALABLE "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase.svg"
+            MIPMAPS_FOLDER "${CMAKE_SOURCE_DIR}/resources/icons/android/res"
+            512x512 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase_512.png"
+            256x256 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase_256.png"
+            128x128 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase_128.png"
+            64x64 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase_64.png"
+            48x48 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase_48.png"
+            32x32 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase_32.png"
     )
     register_file_extension(QtAppBaseTestApp EXTENSION test MIME_TYPE application/x-qtappbase COMMENT "A test")
     install_app(QtAppBaseTestApp)

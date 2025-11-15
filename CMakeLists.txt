@@ -31,7 +31,6 @@ install(
         "${CMAKE_SOURCE_DIR}/CMake/GetDependencies.cmake"
         "${CMAKE_SOURCE_DIR}/CMake/AndroidDeploy.cmake"
         "${CMAKE_SOURCE_DIR}/CMake/AndroidManifest.xml.in"
-        "${CMAKE_SOURCE_DIR}/CMake/ic_launcher.xml.in"
         "${CMAKE_SOURCE_DIR}/CMake/mimeMap.xml.in"
         "${CMAKE_SOURCE_DIR}/CMake/PKGBUILD.cmake"
         "${CMAKE_SOURCE_DIR}/CMake/PKGBUILD.in"
