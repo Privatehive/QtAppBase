@@ -96,6 +96,6 @@ cp "${out_dir}/${target_name}_256.png" "${out_tmp}/256x256.png"
 cp "${out_dir}/${target_name}_512.png" "${out_tmp}/256x256@2x.png"
 cp "${out_dir}/${target_name}_512.png" "${out_tmp}/512x512.png"
 cp "${out_dir}/${target_name}_1024.png" "${out_tmp}/512x512@2x.png"
-icnsutil c "${out_dir}/${target_name}.icns" "${out_tmp}/16x16.png" "${out_tmp}/16x16@2x.png" "${out_tmp}/32x32.png" "${out_tmp}/32x32@2x.png" "${out_tmp}/48x48.png" "${out_tmp}/128x128.png" "${out_tmp}/128x128@2x.png" "${out_tmp}/256x256.png" "${out_tmp}/256x256@2x.png" "${out_tmp}/512x512.png" "${out_tmp}/512x512@2x.png" --toc -f
+icnsutil c "${out_dir}/${target_name}.icns" "${out_tmp}/16x16.png" "${out_tmp}/16x16@2x.png" "${out_tmp}/32x32.png" "${out_tmp}/32x32@2x.png" "${out_tmp}/48x48.png" "${out_tmp}/128x128.png" "${out_tmp}/128x128@2x.png" "${out_tmp}/256x256.png" "${out_tmp}/256x256@2x.png" "${out_tmp}/512x512.png" "${out_tmp}/512x512@2x.png" -f
 
 rm -r -f "${out_tmp}"
