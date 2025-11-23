@@ -85,17 +85,31 @@ mkdir -p "${out_dir}/android/res/mipmap-anydpi-v26"
 printf '<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n  <background android:drawable="@mipmap/ic_launcher_background"/>\n  <foreground android:drawable="@mipmap/ic_launcher_foreground"/>\n  <monochrome android:drawable="@mipmap/ic_launcher_monochrome"/>\n</adaptive-icon>' > "${out_dir}/android/res/mipmap-anydpi-v26/ic_launcher.xml"
 
 # icns
-cp "${out_dir}/${target_name}_16.png" "${out_tmp}/16x16.png"
-cp "${out_dir}/${target_name}_32.png" "${out_tmp}/16x16@2x.png"
+# https://en.wikipedia.org/wiki/Apple_Icon_Image_format
+# The @2x versions replace the standard ones on retina devices so for example, your 16×16@2x should be a scaled up version of your 16×16 icon rather than the same as your 32×32 icon despite them having the same dimensions.
+# inspector: https://relikd.github.io/icnsutil/html/inspector.html
+# viewer: https://relikd.github.io/icnsutil/html/viewer.html
+icnsutil img "${out_tmp}/16x16.argb" "${out_dir}/${target_name}_16.png"
+magick "${out_dir}/${target_name}_16.png" -resize 32x "${out_tmp}/16x16@2x.png" && icnsutil img "${out_tmp}/16x16@2x.argb" "${out_tmp}/16x16@2x.png"
+
 cp "${out_dir}/${target_name}_32.png" "${out_tmp}/32x32.png"
-cp "${out_dir}/${target_name}_64.png" "${out_tmp}/32x32@2x.png"
-cp "${out_dir}/${target_name}_48.png" "${out_tmp}/48x48.png"
+magick "${out_dir}/${target_name}_32.png" -resize 64x "${out_tmp}/32x32@2x.png"
+
 cp "${out_dir}/${target_name}_128.png" "${out_tmp}/128x128.png"
-cp "${out_dir}/${target_name}_256.png" "${out_tmp}/128x128@2x.png"
+magick "${out_dir}/${target_name}_128.png" -resize 256x "${out_tmp}/128x128@2x.png"
+
 cp "${out_dir}/${target_name}_256.png" "${out_tmp}/256x256.png"
-cp "${out_dir}/${target_name}_512.png" "${out_tmp}/256x256@2x.png"
+magick "${out_dir}/${target_name}_256.png" -resize 512x "${out_tmp}/256x256@2x.png"
+
 cp "${out_dir}/${target_name}_512.png" "${out_tmp}/512x512.png"
-cp "${out_dir}/${target_name}_1024.png" "${out_tmp}/512x512@2x.png"
-icnsutil c "${out_dir}/${target_name}.icns" "${out_tmp}/16x16.png" "${out_tmp}/16x16@2x.png" "${out_tmp}/32x32.png" "${out_tmp}/32x32@2x.png" "${out_tmp}/48x48.png" "${out_tmp}/128x128.png" "${out_tmp}/128x128@2x.png" "${out_tmp}/256x256.png" "${out_tmp}/256x256@2x.png" "${out_tmp}/512x512.png" "${out_tmp}/512x512@2x.png" -f
+magick "${out_dir}/${target_name}_512.png" -resize 1024x "${out_tmp}/512x512@2x.png"
+
+icnsutil c "${out_dir}/${target_name}.icns" "${out_tmp}/128x128.png" "${out_tmp}/128x128@2x.png" "${out_tmp}/256x256.png" "${out_tmp}/256x256@2x.png" "${out_tmp}/512x512.png" "${out_tmp}/512x512@2x.png" -f --toc
+icnsutil u "${out_dir}/${target_name}.icns" -set ic04="${out_tmp}/16x16.argb"
+icnsutil u "${out_dir}/${target_name}.icns" -set ic05="${out_tmp}/16x16@2x.argb"
+icnsutil u "${out_dir}/${target_name}.icns" -set ic11="${out_tmp}/32x32.png"
+icnsutil u "${out_dir}/${target_name}.icns" -set ic12="${out_tmp}/32x32@2x.png"
+
+#icnsutil e "${out_dir}/${target_name}.icns" -o "${out_dir}/"
 
 rm -r -f "${out_tmp}"
