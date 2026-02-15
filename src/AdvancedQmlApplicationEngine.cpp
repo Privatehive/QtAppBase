@@ -106,12 +106,15 @@ void AdvancedQmlApplicationEngine::loadRootItem(const QUrl &rootItem, bool useQu
 				qFatal(qmlengine) << error;
 			}
 			mpView->show();
+			emit presenting();
 		}
 	} else {
 		load(rootItem);
 		if(rootObjects().isEmpty()) {
 			const auto errorMsg = QString("Couldn't create GUI: %1").arg(rootItem.toDisplayString());
 			qFatal(qmlengine) << errorMsg;
+		} else {
+			emit presenting();
 		}
 	}
 	if(mHotReloading) connectWatcher();

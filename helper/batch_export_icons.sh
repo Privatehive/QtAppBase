@@ -84,6 +84,14 @@ inkscape "${out_tmp}/fg_mono.svg" -w 432 -h 432 -C --export-png-compression=9 --
 mkdir -p "${out_dir}/android/res/mipmap-anydpi-v26"
 printf '<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n  <background android:drawable="@mipmap/ic_launcher_background"/>\n  <foreground android:drawable="@mipmap/ic_launcher_foreground"/>\n  <monochrome android:drawable="@mipmap/ic_launcher_monochrome"/>\n</adaptive-icon>' > "${out_dir}/android/res/mipmap-anydpi-v26/ic_launcher.xml"
 
+# splash screen
+mkdir -p "${out_dir}/android/res/drawable"
+inkscape "${out_tmp}/fg.svg" -w 432 -h 432 -C --export-png-compression=9 --export-png-antialias=1 --export-type=png -o "${out_dir}/android/res/drawable/logo.png"
+printf '<?xml version="1.0" encoding="UTF-8"?>\n<layer-list xmlns:android="http://schemas.android.com/apk/res/android">\n  <item>\n    <shape android:shape="rectangle">\n      <solid android:color="#33333D"/>\n    </shape>\n  </item>\n  <item>\n    <bitmap android:src="@drawable/logo" android:gravity="center"/>\n  </item>\n</layer-list>' > "${out_dir}/android/res/drawable/qtsplashscreen.xml"
+mkdir -p "${out_dir}/android/res/values"
+printf '<?xml version="1.0" encoding="UTF-8"?>\n<resources>\n  <style name="splashStartTheme">\n    <item name="android:windowNoTitle">true</item>\n    <item name="android:windowDisablePreview">true</item>\n    <item name="android:windowIsTranslucent">true</item>\n  </style>\n</resources>' > "${out_dir}/android/res/values/splashstarttheme.xml"
+printf '<?xml version="1.0" encoding="UTF-8"?>\n<resources>\n  <style name="qtActivityTheme">\n    <item name="android:windowBackground">@drawable/qtsplashscreen</item>\n    <item name="android:windowDisablePreview">false</item>\n    <item name="android:windowIsTranslucent">false</item>\n  </style>\n</resources>' > "${out_dir}/android/res/values/qtactivitytheme.xml"
+
 # icns
 # https://en.wikipedia.org/wiki/Apple_Icon_Image_format
 # The @2x versions replace the standard ones on retina devices so for example, your 16×16@2x should be a scaled up version of your 16×16 icon rather than the same as your 32×32 icon despite them having the same dimensions.

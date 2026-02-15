@@ -38,3 +38,10 @@ install(
         DESTINATION
         "${CMAKE_INSTALL_LIBDIR}/cmake"
 )
+
+install(
+        DIRECTORY
+        "${CMAKE_SOURCE_DIR}/CMake/android"
+        DESTINATION
+        "${CMAKE_INSTALL_LIBDIR}/cmake"
+)
