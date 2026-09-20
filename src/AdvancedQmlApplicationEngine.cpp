@@ -24,6 +24,12 @@ AdvancedQmlApplicationEngine::AdvancedQmlApplicationEngine(QObject *parent) :
 	mpTimer->setInterval(500);
 	mpTimer->setSingleShot(true);
 	connect(mpTimer, &QTimer::timeout, this, [this]() { handleReload(); });
+#ifdef Q_OS_ANDROID
+	qInfo(qmlengine) << "Hiding Android Splash Screen";
+	QObject::connect(
+	 this, &AdvancedQmlApplicationEngine::presenting, this, []() { QNativeInterface::QAndroidApplication::hideSplashScreen(250); },
+	 Qt::QueuedConnection);
+#endif
 	init();
 }
 

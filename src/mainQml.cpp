@@ -10,21 +10,12 @@ int main(int argc, char **argv) {
 	QtApplicationBase<QGuiApplication> app(argc, argv);
 	AdvancedQmlApplicationEngine qmlEngine;
 
-	QObject::connect(
-	 &qmlEngine, &AdvancedQmlApplicationEngine::presenting, &app,
-	 []() {
-#ifdef Q_OS_ANDROID
-		 QNativeInterface::QAndroidApplication::hideSplashScreen(250);
-#endif
-	 },
-	 Qt::QueuedConnection);
-
 #ifdef QT_DEBUG
 	auto qmlMainFile = QString("QtAppBaseTestApp/QtAppBaseTest/main.qml");
 	if(QFile::exists(qmlMainFile)) {
 		qInfo() << "QML hot reloading enabled";
 		qmlEngine.setHotReload(true);
-		qmlEngine.loadRootItem("QtAppBaseTestApp/QtAppBaseTest/main.qml", false);
+		qmlEngine.loadRootItem(qmlMainFile, false);
 	} else {
 		qmlEngine.setHotReload(false);
 		qmlEngine.loadRootItem("qrc:/qt/qml/QtAppBaseTest/QtAppBaseTest/main.qml", false);
