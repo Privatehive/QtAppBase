@@ -21,7 +21,8 @@ inkscape ${source_image} --actions="unhide-all;select-by-id:layer2,layer3;select
 inkscape ${source_image} --actions="unhide-all;select-by-id:layer1,layer3;selection-hide;" -C -l -o "${out_tmp}/fg_mono.svg"
 
 # svg
-inkscape "${out_tmp}/full.svg" -C -l -o "${out_dir}/${target_name}.svg"
+# Convert text to paths: Qt SVG (SVG Tiny 1.2) ignores flowed text (shape-inside) and positioned tspans
+inkscape "${out_tmp}/full.svg" -C -l -T -o "${out_dir}/${target_name}.svg"
 
 # 16x16
 inkscape "${out_tmp}/full.svg" -w 16 -h 16 -C --export-png-compression=9 --export-png-antialias=0 --export-type=png -o "${out_dir}/${target_name}_16.png"
