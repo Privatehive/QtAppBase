@@ -391,7 +391,10 @@ function(register_icon TARGET)
 endfunction()
 
 # register_aux_path(target DIRECTORY dir NAME name)
-# make a directory accessible via Macro AUX_<name>
+# make a directory accessible via Macro AUX_<name> which is defined in the generated header "AuxPath.h"
+# The macro evaluates at runtime to the installed directory (relative to the executable) or, if it doesn't exist, to the
+# directory in the build tree. QCoreApplication must be instantiated before the macro is evaluated
+# Note: Without including "AuxPath.h" '#if defined(AUX_<name>)' silently evaluates to false
 function(register_aux_path TARGET)
 
     set(options)
@@ -400,13 +403,25 @@ function(register_aux_path TARGET)
     cmake_parse_arguments(OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
     string(TOUPPER "${OPTIONS_NAME}" OPTIONS_NAME_UPPER)
     cmake_path(NORMAL_PATH OPTIONS_DIRECTORY OUTPUT_VARIABLE OPTIONS_DIRECTORY_NORM)
-    install(DIRECTORY "${OPTIONS_DIRECTORY_NORM}" DESTINATION "${CMAKE_INSTALL_DATADIR}")
+    install(DIRECTORY "${OPTIONS_DIRECTORY_NORM}" DESTINATION "${CMAKE_INSTALL_DATADIR}" USE_SOURCE_PERMISSIONS)
     cmake_path(GET OPTIONS_DIRECTORY_NORM FILENAME OPTIONS_DIRECTORY_NAME)
     set(MACRO_NAME AUX_${OPTIONS_NAME_UPPER})
-    set(BUILD_INTERFACE_DIR "${OPTIONS_DIRECTORY_NORM}")
-    set(INSTALL_INTERFACE_DIR "${CMAKE_INSTALL_DATADIR}/${OPTIONS_DIRECTORY_NAME}")
-    message(STATUS "QtAppBase: Registered aux path macro ${MACRO_NAME} ${BUILD_INTERFACE_DIR} ${INSTALL_INTERFACE_DIR}")
-    target_compile_definitions(${TARGET} PRIVATE $<BUILD_INTERFACE:${MACRO_NAME}="${BUILD_INTERFACE_DIR}"> $<INSTALL_INTERFACE:${MACRO_NAME}="${INSTALL_INTERFACE_DIR}">)
+    set(BUILD_DIR "${OPTIONS_DIRECTORY_NORM}")
+    if (APPLE)
+        # install_app() copies the data dir next to the executable into the app bundle (Contents/MacOS)
+        set(INSTALL_RELATIVE_DIR "${CMAKE_INSTALL_DATADIR}/${OPTIONS_DIRECTORY_NAME}")
+    else ()
+        cmake_path(RELATIVE_PATH CMAKE_INSTALL_DATADIR BASE_DIRECTORY "${CMAKE_INSTALL_BINDIR}" OUTPUT_VARIABLE DATADIR_RELATIVE)
+        set(INSTALL_RELATIVE_DIR "${DATADIR_RELATIVE}/${OPTIONS_DIRECTORY_NAME}")
+    endif ()
+    message(STATUS "QtAppBase: Registered aux path macro ${MACRO_NAME} ${INSTALL_RELATIVE_DIR} (build tree: ${BUILD_DIR})")
+    get_target_property(AUX_PATHS ${TARGET} QTAPPBASE_AUX_PATHS)
+    if (NOT AUX_PATHS)
+        # The header is generated once at generate time and will contain the macros of all register_aux_path() calls
+        file(GENERATE OUTPUT "${PROJECT_BINARY_DIR}/.qtappbase/aux/${TARGET}/AuxPath.h" INPUT "${current_dir}/AuxPath.h.in" TARGET ${TARGET})
+        target_include_directories(${TARGET} PRIVATE "${PROJECT_BINARY_DIR}/.qtappbase/aux/${TARGET}")
+    endif ()
+    set_property(TARGET ${TARGET} APPEND PROPERTY QTAPPBASE_AUX_PATHS "#define ${MACRO_NAME} qtAppBaseAuxPath(\"${INSTALL_RELATIVE_DIR}\", \"${BUILD_DIR}\")")
 endfunction()
 
 # install a target and more (APKs on Android, AppImage on Linux)
