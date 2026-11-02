@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 	if(QFile::exists(qmlMainFile)) {
 		qInfo() << "QML hot reloading enabled";
 		qmlEngine.setHotReload(true);
-		qmlEngine.loadRootItem("QtAppBaseTestApp/QtAppBaseTest/main.qml", false);
+		qmlEngine.loadRootItem(qmlMainFile, false);
 	} else {
 		qmlEngine.setHotReload(false);
 		qmlEngine.loadRootItem("qrc:/qt/qml/QtAppBaseTest/QtAppBaseTest/main.qml", false);

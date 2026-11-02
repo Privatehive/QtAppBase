@@ -78,7 +78,7 @@ void SecretsManager::readSecret(const QString &alias, std::function<void(QString
 			job->setInsecureFallback(false);
 			job->setAutoDelete(true);
 			QObject::connect(job, &QKeychain::Job::finished, watcher ? watcher : qApp, [alias, callback](QKeychain::Job *job) {
-				if(job->error()) {
+				if(job->error() && job->error() != QKeychain::EntryNotFound) {
 					forceFallback = true;
 					qWarning(secretsmanager) << "Could not read secret from OS secrets manager:" << qPrintable(job->errorString());
 					qInfo(secretsmanager) << "Fallback to settings file secret";
@@ -173,7 +173,7 @@ QString SecretsManager::readSecretSync(const QString &alias) {
 			QObject::connect(
 			 job, &QKeychain::Job::finished, &eventLoop,
 			 [alias, &secret, &eventLoop](QKeychain::Job *job) {
-				 if(job->error()) {
+				 if(job->error() && job->error() != QKeychain::EntryNotFound) {
 					 forceFallback = true;
 					 qWarning(secretsmanager) << "Could not read secret from OS secrets manager:" << qPrintable(job->errorString());
 					 qInfo(secretsmanager) << "Fallback to settings file secret";

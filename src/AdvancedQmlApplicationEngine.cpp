@@ -24,6 +24,12 @@ AdvancedQmlApplicationEngine::AdvancedQmlApplicationEngine(QObject *parent) :
 	mpTimer->setInterval(500);
 	mpTimer->setSingleShot(true);
 	connect(mpTimer, &QTimer::timeout, this, [this]() { handleReload(); });
+#ifdef Q_OS_ANDROID
+	qInfo(qmlengine) << "Hiding Android Splash Screen";
+	QObject::connect(
+	 this, &AdvancedQmlApplicationEngine::presenting, this, []() { QNativeInterface::QAndroidApplication::hideSplashScreen(250); },
+	 Qt::QueuedConnection);
+#endif
 	init();
 }
 
@@ -92,6 +98,7 @@ void AdvancedQmlApplicationEngine::loadRootItem(const QUrl &rootItem, bool useQu
 	if(useQuickView) {
 		// QWindow window;
 		mpView = new QQuickView(this, nullptr);
+		globalObject().setProperty("quickview", newQObject(mpView));
 		mpView->setResizeMode(QQuickView::SizeRootObjectToView);
 		mpView->setSource(rootItem);
 		if(!mpView->rootObject()) {
@@ -105,12 +112,15 @@ void AdvancedQmlApplicationEngine::loadRootItem(const QUrl &rootItem, bool useQu
 				qFatal(qmlengine) << error;
 			}
 			mpView->show();
+			emit presenting();
 		}
 	} else {
 		load(rootItem);
 		if(rootObjects().isEmpty()) {
 			const auto errorMsg = QString("Couldn't create GUI: %1").arg(rootItem.toDisplayString());
 			qFatal(qmlengine) << errorMsg;
+		} else {
+			emit presenting();
 		}
 	}
 	if(mHotReloading) connectWatcher();

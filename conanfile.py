@@ -26,7 +26,7 @@ class QtAppBaseConan(ConanFile):
     url = jsonInfo["repository"]
     # ---Requirements---
     requires = ["qt/[>=6.5.0]@%s/stable" % user]
-    tool_requires = ["cmake/[>=3.21.7]", "ninja/[>=1.11.1]"]
+    tool_requires = ["cmake/[>=3.22.6 <4]", "ninja/[>=1.11.1]"]
     # ---Sources---
     exports = ["info.json", "LICENSE"]
     exports_sources = ["info.json", "LICENSE", "*.txt", "src/*", "resources/*", "CMake/*"]
@@ -37,12 +37,18 @@ class QtAppBaseConan(ConanFile):
                "lto": [True, False],
                "secretsManager": [True, False],
                "qml": [True, False],
+               "asyncFuture": [True, False],
+               "mobileUi": [True, False],
+               "resultType": [True, False],
                "testapp": [True, False]}
     default_options = {"shared": True,
                        "fPIC": True,
                        "lto": False,
                        "secretsManager": False,
                        "qml": False,
+                       "asyncFuture": False,
+                       "mobileUi": False,
+                       "resultType": False,
                        "testapp": False,
                        "qt/*:qtbase": True
                        }
@@ -74,7 +80,7 @@ class QtAppBaseConan(ConanFile):
             if not self.dependencies["qt"].options.qtbase:
                 raise ConanInvalidConfiguration("qt qtbase options is required")
             if self.options.qml:
-                if not self.dependencies["qt"].options:
+                if not self.dependencies["qt"].options.GUI:
                     raise ConanInvalidConfiguration("qt GUI options is required")
                 if not self.dependencies["qt"].options.qtdeclarative:
                     raise ConanInvalidConfiguration("qt qtdeclarative options is required")
@@ -93,7 +99,10 @@ class QtAppBaseConan(ConanFile):
             self.options["qt"].GUI = True
             self.options["qt"].qtshadertools = True
             self.options["qt"].qtdeclarative = True
+            self.options["qt"].qtshadertools = True
             self.options["qt"].opengl = "desktop"
+        else:
+            self.options.rm_safe("mobileUi")
 
     def generate(self):
         ms = VirtualBuildEnv(self)
@@ -102,6 +111,9 @@ class QtAppBaseConan(ConanFile):
         tc.variables["FEATURE_QML"] = self.options.qml
         tc.variables["CMAKE_INTERPROCEDURAL_OPTIMIZATION"] = self.options.lto
         tc.variables["FEATURE_TEST_APP"] = self.options.testapp
+        tc.variables["FEATURE_ASYNC_FUTURE"] = self.options.asyncFuture
+        tc.variables["FEATURE_RESULT_TYPE"] = self.options.resultType
+        tc.variables["FEATURE_MOBILE_UI"] = self.options.get_safe("mobileUi", False)
         tc.generate()
         ms.generate()
 

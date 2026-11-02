@@ -31,6 +31,7 @@ class QTAPPBASE_EXPORT AdvancedQmlApplicationEngine : public QQmlApplicationEngi
 
  signals:
 	void reloadFinished();
+	void presenting();
 
  private:
 	Q_DISABLE_COPY(AdvancedQmlApplicationEngine)
