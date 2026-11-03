@@ -517,6 +517,33 @@ function(install_app TARGET)
                     [=[.*system32\/.*\.dll]=]
                     DIRECTORIES ${CONAN_RUNTIME_LIB_DIRS} "$ENV{MINGW_HOME}/bin"
             )
+            # Deployed QML plugins may depend on libraries the app doesn't link itself (e.g. the backing library of a
+            # QML module). Resolve the dependencies of all QML plugins after they were deployed by the deploy script.
+            file(TO_CMAKE_PATH "$ENV{MINGW_HOME}" mingw_home)
+            install(CODE "set(qtappbase_dependency_dirs \"${CONAN_RUNTIME_LIB_DIRS};${mingw_home}/bin\")\nset(qtappbase_bin_dir \"${CMAKE_INSTALL_BINDIR}\")")
+            install(CODE [==[
+                file(GLOB_RECURSE qml_plugins LIST_DIRECTORIES false "${CMAKE_INSTALL_PREFIX}/qml/*.dll")
+                if (qml_plugins)
+                    set(install_bin_dir "${CMAKE_INSTALL_PREFIX}/${qtappbase_bin_dir}")
+                    file(GET_RUNTIME_DEPENDENCIES
+                            LIBRARIES ${qml_plugins}
+                            RESOLVED_DEPENDENCIES_VAR qml_plugin_dependencies
+                            UNRESOLVED_DEPENDENCIES_VAR qml_plugin_unresolved
+                            PRE_EXCLUDE_REGEXES [=[api-ms-]=] [=[ext-ms-]=] [[kernel32\.dll]]
+                            POST_EXCLUDE_REGEXES [=[.*system32\/.*\.dll]=]
+                            DIRECTORIES ${qtappbase_dependency_dirs}
+                    )
+                    # Libraries of the app project itself are not found in the dependency dirs but are already installed
+                    foreach (unresolved IN LISTS qml_plugin_unresolved)
+                        if (NOT EXISTS "${install_bin_dir}/${unresolved}")
+                            message(WARNING "QtAppBase: Unresolved QML plugin dependency: ${unresolved}")
+                        endif ()
+                    endforeach ()
+                    if (qml_plugin_dependencies)
+                        file(INSTALL ${qml_plugin_dependencies} DESTINATION "${install_bin_dir}")
+                    endif ()
+                endif ()
+            ]==])
             #include(GetDependencies)
             #get_all_dependencies(${TARGET} alldeps NO_STATIC)
             #foreach (dep IN LISTS alldeps)
