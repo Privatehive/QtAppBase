@@ -1,6 +1,7 @@
 #ifndef QFFUTURE_H
 #define QFFUTURE_H
 
+#include "QuickFutureExport.h"
 #include "qfvariantwrapper.h"
 #include <QFuture>
 #include <QObject>
@@ -9,7 +10,7 @@
 
 namespace QuickFuture {
 
-class Future : public QObject {
+class QUICKFUTURE_EXPORT Future : public QObject {
 
 	Q_OBJECT
 	QML_ELEMENT

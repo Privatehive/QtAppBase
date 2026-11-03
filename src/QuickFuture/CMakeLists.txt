@@ -33,6 +33,10 @@ qt_add_qml_module(
         QuickFuture
 )
 
-target_mark_public_header(QuickFuture quickfuture.h qffuture.h qfvariantwrapper.h QuickFuture)
+generate_export_header(QuickFuture EXPORT_FILE_NAME QuickFutureExport.h)
+
+target_include_directories(QuickFuture PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}> $<INSTALL_INTERFACE:include>)
+
+target_mark_public_header(QuickFuture quickfuture.h qffuture.h qfvariantwrapper.h QuickFuture ${CMAKE_CURRENT_BINARY_DIR}/QuickFutureExport.h)
 
 install_qml_module(QuickFuture)
