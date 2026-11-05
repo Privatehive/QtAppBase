@@ -6,15 +6,17 @@
 
 ---
 
-| os        | arch     | CI Status                                                                                                                                                                                                                                                   |
-|-----------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Linux`   | `x86_64` | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
-| `Windows` | `x86_64` | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
-| `Macos`   | `armv8`  | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
-| `Android` | `x86`    | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
-| `Android` | `x86_64` | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
-| `Android` | `armv7`  | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
-| `Android` | `armv8`  | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
+| os                               | arch     | CI Status                                                                                                                                                                                                                                                   |
+| -------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Linux`                          | `x86_64` | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
+| `Linux (Raspberry Pi OS 32-bit)` | `armv6`  | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
+| `Linux (Raspberry Pi OS 64-bit)` | `armv8`  | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
+| `Windows`                        | `x86_64` | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
+| `Macos`                          | `armv8`  | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
+| `Android`                        | `x86`    | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
+| `Android`                        | `x86_64` | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
+| `Android`                        | `armv7`  | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
+| `Android`                        | `armv8`  | [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Privatehive/QtAppBase/main.yml?branch=master&style=flat&logo=github&label=create+package)](https://github.com/Privatehive/QtAppBase/actions?query=branch%3Amaster) |
 
 ### Features
 
@@ -23,6 +25,7 @@
 * [`qml=True`] `QmlApplicationEngine` with hot reloading support:
     * Injects global function `instanceOf(var item, var type)` to workaround broken `instanceOf` check after hot reload.
     * Injects global property `isDebug` which equals `true` if QtAppBase was compiled as debug, `false` otherwise.
+    * Injects global property `quickview` but only if `loadRootItem()` was called with `useQuickView==true`.
 * `SecretsManager`
 * CMake based deployment for Android, Linux, Windows
     * Linux: AppImage
@@ -33,19 +36,25 @@
 ### Environment variables
 
 **Windows Installer:**
-  * `WIN_CODESIGN_OPTIONS`: Options passed to [signtool](https://learn.microsoft.com/de-de/dotnet/framework/tools/signtool-exe#sign-command-options). Each option must be separated by a `;` e.g.: `/n;MyCodeSigningCert;/fd;SHA256;/t;http://timestamp.digicert.com`
+
+* `WIN_CODESIGN_OPTIONS`: Options passed
+  to [signtool](https://learn.microsoft.com/de-de/dotnet/framework/tools/signtool-exe#sign-command-options). Each option
+  must be separated by a `;` e.g.: `/n;MyCodeSigningCert;/fd;SHA256;/t;http://timestamp.digicert.com`
 
 **macOS App package:**
-  * `APPLE_CODESIGN_IDENTITY`: The identity used to sign the app: It's the 10 character long alpha numeric string of the Apple Developer cert found in the Keychain Access
+
+* `APPLE_CODESIGN_IDENTITY`: The identity used to sign the app: It's the 10 character long alpha numeric string of the
+  Apple Developer cert found in the Keychain Access
 
 **Android APK/AAB:**
 
-The env vars are consumed by [androiddeployqt](https://doc.qt.io/qt-6/android-deploy-qt-tool.html#command-line-arguments)
+The env vars are consumed
+by [androiddeployqt](https://doc.qt.io/qt-6/android-deploy-qt-tool.html#command-line-arguments)
 
-  * `QT_ANDROID_KEYSTORE_PATH`: The absolute path pointing to a .jks keystore file
-  * `QT_ANDROID_KEYSTORE_ALIAS`: The alias used for signing
-  * `QT_ANDROID_KEYSTORE_STORE_PASS`: The store password
-  * `QT_ANDROID_KEYSTORE_KEY_PASS`: The key password
+* `QT_ANDROID_KEYSTORE_PATH`: The absolute path pointing to a .jks keystore file
+* `QT_ANDROID_KEYSTORE_ALIAS`: The alias used for signing
+* `QT_ANDROID_KEYSTORE_STORE_PASS`: The store password
+* `QT_ANDROID_KEYSTORE_KEY_PASS`: The key password
 
 > [!TIP]
 > Declare the needed env vars in a **new** conan profile named e.g. `sign_env`:

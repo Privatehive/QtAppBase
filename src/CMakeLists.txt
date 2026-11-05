@@ -3,6 +3,9 @@ include(GenerateExportHeader)
 set(FEATURE_TEST_APP OFF CACHE BOOL "Build a test app")
 set(FEATURE_SECRETS_MANAGER OFF CACHE BOOL "Enables access to the OS secret manager, or a generic one if the OS doesn't provide one")
 set(FEATURE_QML OFF CACHE BOOL "Expose features to Qml")
+set(FEATURE_ASYNC_FUTURE OFF CACHE BOOL "Include AsyncFuture, QuickFuture and QuickPromise (only if FEATURE_QML is enabled)")
+set(FEATURE_RESULT_TYPE OFF CACHE BOOL "Include a Result type")
+set(FEATURE_MOBILE_UI OFF CACHE BOOL "Include MobileUI")
 
 find_package(Qt6 REQUIRED COMPONENTS Core)
 
@@ -19,6 +22,19 @@ target_mark_public_header(QtAppBase
         QtApplicationBase.h
         ${CMAKE_CURRENT_BINARY_DIR}/QtApplicationBaseExport.h
 )
+
+if (FEATURE_RESULT_TYPE)
+    target_sources(QtAppBase
+            PRIVATE
+            Result.h
+            Result.cpp
+    )
+
+    target_mark_public_header(QtAppBase
+            Result.h
+            Result
+    )
+endif ()
 
 target_link_libraries(QtAppBase PUBLIC Qt6::Core)
 target_include_directories(QtAppBase PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> $<INSTALL_INTERFACE:include>)
@@ -38,6 +54,27 @@ if (FEATURE_QML)
     )
 
     target_link_libraries(QtAppBase PUBLIC Qt6::Quick PUBLIC Qt6::Qml)
+endif ()
+
+if (FEATURE_ASYNC_FUTURE)
+
+    message(STATUS "Enabled AsyncFuture")
+
+    target_mark_public_header(QtAppBase
+            AsyncFuture/asyncfuture.h
+            AsyncFuture/AsyncFuture
+    )
+
+    if (FEATURE_QML)
+        message(STATUS "Enabled Future QML integration (a.k.a. QuickFuture)")
+        add_subdirectory(QuickFuture)
+        message(STATUS "Enabled Promise QML integration (a.k.a. QuickPromise)")
+        add_subdirectory(QuickPromise)
+    endif ()
+endif ()
+
+if (FEATURE_MOBILE_UI)
+    add_subdirectory(MobileUI)
 endif ()
 
 if (FEATURE_SECRETS_MANAGER)
@@ -100,12 +137,14 @@ if (FEATURE_TEST_APP AND FEATURE_QML)
     register_icon(QtAppBaseTestApp
             ICO "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase.ico"
             ICNS "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase.icns"
-            512x512 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase512.png"
-            256x256 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase256.png"
-            128x128 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase128.png"
-            64x64 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase64.png"
-            48x48 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase48.png"
-            32x32 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase32.png"
+            SCALABLE "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase.svg"
+            MIPMAPS_FOLDER "${CMAKE_SOURCE_DIR}/resources/icons/android/res"
+            512x512 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase_512.png"
+            256x256 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase_256.png"
+            128x128 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase_128.png"
+            64x64 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase_64.png"
+            48x48 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase_48.png"
+            32x32 "${CMAKE_SOURCE_DIR}/resources/icons/QtAppBase_32.png"
     )
     register_file_extension(QtAppBaseTestApp EXTENSION test MIME_TYPE application/x-qtappbase COMMENT "A test")
     install_app(QtAppBaseTestApp)

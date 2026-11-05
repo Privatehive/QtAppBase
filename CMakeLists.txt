@@ -35,6 +35,14 @@ install(
         "${CMAKE_SOURCE_DIR}/CMake/PKGBUILD.cmake"
         "${CMAKE_SOURCE_DIR}/CMake/PKGBUILD.in"
         "${CMAKE_SOURCE_DIR}/CMake/win32resource.rc.in"
+        "${CMAKE_SOURCE_DIR}/CMake/AuxPath.h.in"
+        DESTINATION
+        "${CMAKE_INSTALL_LIBDIR}/cmake"
+)
+
+install(
+        DIRECTORY
+        "${CMAKE_SOURCE_DIR}/CMake/android"
         DESTINATION
         "${CMAKE_INSTALL_LIBDIR}/cmake"
 )
