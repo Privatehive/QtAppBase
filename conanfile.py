@@ -59,7 +59,7 @@ class QtAppBaseConan(ConanFile):
 
     def requirements(self):
         if self.options.secretsManager:
-            self.requires("qtkeychain/0.14.3@%s/stable" % self.user)
+            self.requires("qtkeychain/0.17.0@%s/stable" % self.user)
 
     def build_requirements(self):
         if self.settings.os == "Linux":
